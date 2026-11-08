@@ -201,7 +201,7 @@ def build_product(product: str, dem: EquirectRaster, mosaic: EquirectRaster) -> 
             },
         },
         "limits": [
-            "DEM horizontal post spacing is about 400 m on a 200 m grid. Vertical precision is about 25 to 100 m.",
+            "DEM horizontal post spacing is about 400 m on a 200 m grid. Vertical precision is about 25 to 100 m per USGS, and about 50 to 250 m per Schenk and McKinnon (2024), varying by stereo pair.",
             "Nothing below that scale is measured. Any boulder, crack or surface texture added in Unreal is invented.",
             "No dataset here supports lander-scale hazard assessment.",
             "The provenance layer is an inference from the DEM's texture, because the USGS product has no per-pixel source map.",
@@ -209,6 +209,7 @@ def build_product(product: str, dem: EquirectRaster, mosaic: EquirectRaster) -> 
             "Heights are treated as radial distance from the reference ellipsoid.",
         ],
         "reference_ellipsoid_m": [body.A_M, body.B_M, body.C_M],
+        "reference_ellipsoid_a_axis_lon_east_deg": body.A_AXIS_LON_EAST_DEG,
         "sources": {"dem": DEM, "mosaic": MOSAIC, "citation": CITATION},
     }
     (folder / "tile.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")

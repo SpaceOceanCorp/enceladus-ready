@@ -22,6 +22,10 @@ B_M = 251_400.0
 C_M = 248_600.0
 MEAN_RADIUS_M = (A_M * B_M * C_M) ** (1.0 / 3.0)
 
+# Schenk & McKinnon (2024) shift the reference figure 4.15 degrees west to match
+# the moon's tidal axis. A fit of sin(2 lon) in the published DEM confirms the shift.
+A_AXIS_LON_EAST_DEG = -4.15
+
 # Radius of the sphere the USGS rasters are projected on. It sets the grid only.
 # Heights are NOT relative to this sphere.
 MAP_SPHERE_M = 256_200.0
@@ -35,9 +39,10 @@ def west_to_east(lon_west_deg):
 def ellipsoid_radius(lat_rad, lon_rad):
     """Radius of the reference ellipsoid along a planetocentric direction, metres."""
     cl = np.cos(lat_rad)
+    from_a_axis = lon_rad - np.radians(A_AXIS_LON_EAST_DEG)
     return 1.0 / np.sqrt(
-        (cl * np.cos(lon_rad) / A_M) ** 2
-        + (cl * np.sin(lon_rad) / B_M) ** 2
+        (cl * np.cos(from_a_axis) / A_M) ** 2
+        + (cl * np.sin(from_a_axis) / B_M) ** 2
         + (np.sin(lat_rad) / C_M) ** 2
     )
 

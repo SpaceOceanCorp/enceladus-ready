@@ -8,9 +8,11 @@ from enceladus_ready.tile import PROV_CLEAN, PROV_SPECKLED, decode_height, denoi
 
 
 def test_ellipsoid_axes():
-    assert body.ellipsoid_radius(0.0, 0.0) == pytest.approx(body.A_M)
-    assert body.ellipsoid_radius(0.0, np.pi / 2) == pytest.approx(body.B_M)
+    a_axis = np.radians(body.A_AXIS_LON_EAST_DEG)
+    assert body.ellipsoid_radius(0.0, a_axis) == pytest.approx(body.A_M)
+    assert body.ellipsoid_radius(0.0, a_axis + np.pi / 2) == pytest.approx(body.B_M)
     assert body.ellipsoid_radius(-np.pi / 2, 0.3) == pytest.approx(body.C_M)
+    assert body.ellipsoid_radius(0.0, 0.0) < body.A_M
 
 
 def test_west_to_east():

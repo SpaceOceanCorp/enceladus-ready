@@ -15,7 +15,7 @@ PRODUCTS = {
         "source": DEM,
         "title": "Enceladus global DEM, cloud-optimized",
         "unit": "km",
-        "description": "Height above the ellipsoid 256.2 x 251.4 x 248.6 km. 200 m grid, about 400 m true post spacing, 25 to 100 m vertical precision.",
+        "description": "Height in km above the ellipsoid 256.2 x 251.4 x 248.6 km, with its long axis at 4.15 degrees west. 200 m grid, about 400 m true post spacing. Vertical precision is 25 to 100 m per USGS and 50 to 250 m per the source paper.",
         "gsd": 200.0,
     },
     "mosaic": {

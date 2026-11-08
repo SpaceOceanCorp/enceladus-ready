@@ -54,9 +54,10 @@ There are two versions of the same ground. Each folder has a `tile.json` with ev
 ## What the source data contains, and the traps
 
 * The rasters are projected on a 256.2 km sphere, but heights are relative to a 256.2 x 251.4 x 248.6 km ellipsoid. Adding heights to the sphere is wrong by up to 7.6 km at the poles.
-* DEM values are in kilometers, and the file does not say so.
-* The DEM grid is 200 m, but the true post spacing is about 400 m with 25 to 100 m vertical precision.
-* The DEM is a patchwork. Sharp seams separate cleaner areas from speckled stereo patches, and about 73% of this tile falls in speckled patches.
+* That ellipsoid's long axis sits at 4.15 degrees west, not at longitude 0. The paper describes the shift, and a fit to the published DEM confirms it.
+* DEM values are in kilometers. The GeoTIFF and its PDS4 label do not say so, only the USGS catalog page does.
+* The DEM grid is 200 m, but the true post spacing is about 400 m. Vertical precision is given as 25 to 100 m by USGS and about 50 to 250 m by the source paper.
+* The DEM combines 97 separate stereo DEMs, each fitted to a sparser control-point shape model. Sharp seams separate cleaner areas from speckled patches, and about 73% of this tile falls in speckled patches.
 
 ## Limits
 
