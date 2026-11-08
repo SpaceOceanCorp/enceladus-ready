@@ -1,0 +1,26 @@
+[workspace]
+name = "enceladus-ready"
+version = "0.1.0"
+description = "Turns public Cassini-derived Enceladus map products into cloud-optimized rasters and Unreal Engine terrain kits"
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64", "osx-arm64"]
+
+[dependencies]
+python = "3.12.*"
+rasterio = ">=1.3"
+numpy = ">=1.26"
+scipy = ">=1.11"
+pillow = ">=10"
+matplotlib-base = ">=3.8"
+pytest = ">=8"
+
+[tasks]
+fetch = "python -m enceladus_ready.cli fetch"
+cog = "python -m enceladus_ready.cli cog"
+tile = "python -m enceladus_ready.cli tile"
+ephem = "python -m enceladus_ready.cli ephem"
+all = "python -m enceladus_ready.cli all"
+test = "python -m pytest tests -q"
+
+[activation.env]
+PYTHONPATH = "src"
