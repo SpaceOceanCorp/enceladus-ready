@@ -1,0 +1,277 @@
+<meta charset="utf-8">
+<title>Enceladus South Pole Viewer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the terrain fills the window, with a narrow instrument panel beside it (below it on phones). */
+:root {
+  --bg: #070d12; --panel: #101b24; --panel-2: #182835; --fg: #e4eff6; --muted: #9db3c2;
+  --line: #2b4453; --accent: #4fc0ec; --amber: #ffb84d; --jet: #ff7a59;
+  --display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Barlow", "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font: 400 15px/1.45 var(--body); }
+.app { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 330px; }
+.stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg); }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+canvas.dragging { cursor: grabbing; }
+.hud { position: absolute; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; pointer-events: none; max-width: calc(100% - 24px); }
+.chip { background: color-mix(in srgb, var(--bg) 82%, transparent); border: 1px solid var(--line); border-radius: 3px; padding: 4px 8px; font: 400 12.5px/1.3 var(--mono); font-variant-numeric: tabular-nums; }
+.zoom { position: absolute; top: 12px; left: 12px; display: grid; gap: 4px; }
+.zoom button { width: 38px; height: 38px; font: 500 20px/1 var(--mono); }
+.loading { position: absolute; top: 14px; left: 62px; }
+aside { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding-block: 18px 22px; padding-left: 18px; padding-right: max(18px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; align-content: start; min-width: 0; }
+aside > * { min-width: 0; }
+h1 { font: 600 30px/1.05 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 500 12.5px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0; }
+p { margin: 0; }
+.muted { color: var(--muted); font-size: 14px; }
+.group { display: grid; gap: 8px; }
+button { background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); border-radius: 3px; cursor: pointer; font: 500 14.5px/1.25 var(--body); padding: 8px 10px; text-align: left; }
+button:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.places { display: grid; gap: 6px; }
+.toggle { display: flex; gap: 9px; align-items: flex-start; cursor: pointer; }
+.toggle input { margin: 3px 0 0; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+.toggle small { display: block; color: var(--muted); font-size: 13px; }
+.compare { font-weight: 600; text-align: center; border-color: var(--accent); }
+dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 3px 12px; font-size: 14px; }
+dt { color: var(--muted); }
+dd { margin: 0; font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.keys { font: 400 12.5px/1.5 var(--mono); color: var(--muted); }
+.note { border-top: 1px solid var(--line); padding-top: 12px; font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+@media (max-width: 760px) {
+  .app { height: auto; min-height: 100%; grid-template-columns: minmax(0, 1fr); grid-template-rows: 62vh auto; }
+  .stage { height: 62vh; }
+  aside { border-left: 0; border-top: 1px solid var(--line); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="app">
+  <div class="stage" id="stage">
+    <canvas id="map" tabindex="0" aria-label="Zoomable map of the Enceladus south polar terrain. Drag to move and scroll to zoom."></canvas>
+    <div class="zoom">
+      <button id="in" aria-label="Zoom in">+</button>
+      <button id="out" aria-label="Zoom out">&minus;</button>
+    </div>
+    <div class="chip loading" id="loading" hidden>Loading imagery</div>
+    <div class="hud">
+      <div class="chip" id="scale">10 km</div>
+      <div class="chip" id="pos">Move the pointer over the surface</div>
+    </div>
+  </div>
+
+  <aside>
+    <div class="group">
+      <h1>Enceladus South Pole</h1>
+      <p class="muted">Cassini imagery on the south polar terrain, seen from outside the moon. Drag to move. Scroll or pinch to zoom.</p>
+    </div>
+
+    <div class="group">
+      <h2>Go to</h2>
+      <div class="places" id="places"></div>
+    </div>
+
+    <div class="group">
+      <h2>Layers</h2>
+      <button class="compare" id="compare">Hold to compare with base map</button>
+      <label class="toggle"><input type="checkbox" id="insets" checked><span>Cassini detail<small>Real frames as fine as <span id="finest"></span> m per pixel</small></span></label>
+      <label class="toggle"><input type="checkbox" id="frames"><span>Frame outlines<small>Click an outline for its details</small></span></label>
+      <label class="toggle"><input type="checkbox" id="jets"><span>Published jets<small>100 sources from Porco et al. (2014)</small></span></label>
+    </div>
+
+    <div class="group">
+      <h2>Selected frame</h2>
+      <p class="muted" id="none">Turn on Frame outlines and click one.</p>
+      <dl id="frame" hidden></dl>
+    </div>
+
+    <div class="group">
+      <h2>This view</h2>
+      <dl id="stats"></dl>
+    </div>
+
+    <div class="keys">Keys: arrows move, + and &minus; zoom, 0 whole tile, I detail, F outlines, J jets</div>
+
+    <div class="note">
+      <p>Base map: Schenk and McKinnon (2024), Icarus 408, 115827, 100 m per pixel. Detail: NASA/JPL-Caltech/Space Science Institute, via the PDS Ring-Moon Systems Node. Jets: Porco, DiNino and Nimmo (2014). No endorsement by these sources is implied.</p>
+      <p>Contrast is adjusted for viewing, so brightness is not a measurement. Lighting differs between flybys. <span id="notice"></span></p>
+    </div>
+  </aside>
+</div>
+
+<script>
+const M = __MANIFEST__;
+const stage = document.getElementById('stage'), canvas = document.getElementById('map'), ctx = canvas.getContext('2d');
+const $ = id => document.getElementById(id);
+const view = { x: 0, y: 0, s: 1 };
+const show = { insets: true, frames: false, jets: false, compare: false };
+let W = 0, H = 0, DPR = 1, fit = 1, selected = null, hovered = null, queued = false, pending = 0;
+const R = M.radiusKm, MAX_S = 400;
+
+function resize() {
+  const r = stage.getBoundingClientRect();
+  W = r.width; H = r.height; DPR = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+  const before = fit; fit = Math.min(W, H) / (2 * M.halfKm) * 0.97;
+  if (Math.abs(view.s - before) < 1e-6 || view.s === 1) view.s = fit;
+  request();
+}
+new ResizeObserver(resize).observe(stage);
+
+const sx = x => (x - view.x) * view.s + W / 2, sy = y => (y - view.y) * view.s + H / 2;
+const wx = px => (px - W / 2) / view.s + view.x, wy = py => (py - H / 2) / view.s + view.y;
+function clamp() {
+  view.s = Math.min(MAX_S, Math.max(fit * 0.7, view.s));
+  view.x = Math.max(-M.halfKm, Math.min(M.halfKm, view.x));
+  view.y = Math.max(-M.halfKm, Math.min(M.halfKm, view.y));
+}
+function request() { if (!queued) { queued = true; requestAnimationFrame(draw); } }
+
+function image(tile) {
+  if (tile.img) return tile.img.complete && tile.img.naturalWidth ? tile.img : null;
+  tile.img = new Image(); pending++; updateLoading();
+  const done = () => { pending--; updateLoading(); request(); };
+  tile.img.onload = done; tile.img.onerror = done; tile.img.src = tile.src;
+  return null;
+}
+function updateLoading() { $('loading').hidden = pending === 0; }
+function visible(t) { return sx(t.x1) > 0 && sx(t.x0) < W && sy(t.y1) > 0 && sy(t.y0) < H; }
+function paint(t) {
+  if (!visible(t)) return;
+  const im = image(t); if (!im) return;
+  ctx.drawImage(im, sx(t.x0), sy(t.y0), (t.x1 - t.x0) * view.s, (t.y1 - t.y0) * view.s);
+}
+function path(points) {
+  ctx.beginPath(); points.forEach((p, i) => i ? ctx.lineTo(sx(p[0]), sy(p[1])) : ctx.moveTo(sx(p[0]), sy(p[1]))); ctx.closePath();
+}
+function draw() {
+  queued = false;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#070d12'; ctx.fillRect(0, 0, W, H);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = view.s > 40 ? 'low' : 'high';
+  M.base.forEach(paint);
+  if (show.insets && !show.compare) M.insets.forEach(paint);
+  if (show.frames) {
+    ctx.lineWidth = 1.2;
+    M.frames.forEach(f => {
+      const on = f === selected || f === hovered;
+      path(f.corners); ctx.strokeStyle = on ? '#ffffff' : '#ffb84d'; ctx.lineWidth = on ? 2 : 1.1; ctx.stroke();
+      if (on) { ctx.fillStyle = 'rgba(255,184,77,.13)'; ctx.fill(); }
+    });
+  }
+  if (show.jets) {
+    ctx.fillStyle = '#ff7a59';
+    M.jets.forEach(j => { const a = sx(j.x), b = sy(j.y); if (a > -6 && a < W + 6 && b > -6 && b < H + 6) { ctx.beginPath(); ctx.arc(a, b, 3.2, 0, 7); ctx.fill(); } });
+  }
+  const a = sx(0), b = sy(0);
+  if (a > 0 && a < W && b > 0 && b < H) { ctx.strokeStyle = 'rgba(79,192,236,.9)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(a - 7, b); ctx.lineTo(a + 7, b); ctx.moveTo(a, b - 7); ctx.lineTo(a, b + 7); ctx.stroke(); }
+  scaleBar(); stats();
+}
+function scaleBar() {
+  const target = 130 / view.s, power = Math.pow(10, Math.floor(Math.log10(target)));
+  const length = [5, 2, 1].map(m => m * power).find(v => v <= target) || power;
+  $('scale').textContent = (length >= 1 ? length + ' km' : Math.round(length * 1000) + ' m') + ' ';
+  $('scale').style.borderBottom = '3px solid var(--accent)';
+  $('scale').style.width = Math.max(length * view.s, 48) + 'px';
+}
+function resolutionHere() {
+  if (!show.insets || show.compare) return 100;
+  const x = view.x, y = view.y;
+  let best = 100;
+  M.frames.forEach(f => { if (inside(f.corners, x, y) && f.scale < best) best = f.scale; });
+  return best;
+}
+function stats() {
+  const rows = [
+    ['Screen pixel', view.s > 1 ? Math.round(1000 / view.s) + ' m' : (1 / view.s).toFixed(1) + ' km'],
+    ['Imagery at center', Math.round(resolutionHere()) + ' m per pixel'],
+    ['Center', latlon(view.x, view.y)],
+    ['Frames placed', M.frames.length + ' of ' + M.candidates],
+    ['Detail coverage', M.coveredKm2.toLocaleString() + ' km²'],
+  ];
+  $('stats').innerHTML = rows.map(r => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('');
+}
+function latlon(x, y) {
+  const lat = 2 * Math.atan2(Math.hypot(x, y), 2 * R) * 180 / Math.PI - 90;
+  const lon = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  return lat.toFixed(2) + '°, ' + lon.toFixed(2) + '°E';
+}
+function inside(poly, x, y) {
+  let hit = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) hit = !hit;
+  }
+  return hit;
+}
+function frameAt(x, y) {
+  return M.frames.filter(f => inside(f.corners, x, y)).sort((a, b) => a.scale - b.scale)[0] || null;
+}
+function showFrame(f) {
+  selected = f;
+  $('none').hidden = !!f; $('frame').hidden = !f;
+  if (f) $('frame').innerHTML = [['Image', 'N' + f.image], ['Flyby', f.flyby], ['Pixel scale', f.scale + ' m'], ['View tilt', f.emission + '°'], ['Match to mosaic', f.match], ['Position check', f.offset]].map(r => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('');
+  request();
+}
+function go(x, y, s) { view.x = x; view.y = y; view.s = s; clamp(); request(); }
+function zoomAt(px, py, factor) {
+  const x = wx(px), y = wy(py);
+  view.s *= factor; clamp();
+  view.x = x - (px - W / 2) / view.s; view.y = y - (py - H / 2) / view.s; clamp(); request();
+}
+
+const pointers = new Map();
+let dragged = 0, pinch = 0;
+canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.offsetX, e.offsetY]); dragged = 0; canvas.classList.add('dragging'); if (pointers.size === 2) { const p = [...pointers.values()]; pinch = Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]); } });
+canvas.addEventListener('pointermove', e => {
+  const old = pointers.get(e.pointerId);
+  if (old) {
+    pointers.set(e.pointerId, [e.offsetX, e.offsetY]);
+    if (pointers.size === 1) { const dx = e.offsetX - old[0], dy = e.offsetY - old[1]; dragged += Math.abs(dx) + Math.abs(dy); view.x -= dx / view.s; view.y -= dy / view.s; clamp(); request(); }
+    else if (pointers.size === 2) { const p = [...pointers.values()], d = Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]); dragged += 10; if (pinch) zoomAt((p[0][0] + p[1][0]) / 2, (p[0][1] + p[1][1]) / 2, d / pinch); pinch = d; }
+    return;
+  }
+  const x = wx(e.offsetX), y = wy(e.offsetY);
+  $('pos').textContent = Math.abs(x) <= M.halfKm && Math.abs(y) <= M.halfKm ? latlon(x, y) + '  ' + 'X ' + x.toFixed(2) + ' km  Y ' + y.toFixed(2) + ' km' : 'Outside the tile';
+  if (show.frames) { const h = frameAt(x, y); if (h !== hovered) { hovered = h; request(); } }
+});
+function release(e) { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = 0; if (!pointers.size) canvas.classList.remove('dragging'); }
+canvas.addEventListener('pointerup', e => { if (dragged < 6 && show.frames) showFrame(frameAt(wx(e.offsetX), wy(e.offsetY))); release(e); });
+canvas.addEventListener('pointercancel', release);
+canvas.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * 0.0016)); }, { passive: false });
+$('in').onclick = () => zoomAt(W / 2, H / 2, 1.6);
+$('out').onclick = () => zoomAt(W / 2, H / 2, 1 / 1.6);
+
+[['insets', 'I'], ['frames', 'F'], ['jets', 'J']].forEach(([id]) => { $(id).onchange = () => { show[id] = $(id).checked; if (id === 'frames' && !show.frames) { hovered = null; showFrame(null); } request(); }; });
+const compare = $('compare');
+const hold = v => { show.compare = v; compare.textContent = v ? 'Showing base map' : 'Hold to compare with base map'; request(); };
+compare.addEventListener('pointerdown', e => { compare.setPointerCapture(e.pointerId); hold(true); });
+['pointerup', 'pointercancel'].forEach(n => compare.addEventListener(n, () => hold(false)));
+compare.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); hold(true); } });
+compare.addEventListener('keyup', () => hold(false));
+
+window.addEventListener('keydown', e => {
+  if (e.target === compare) return;
+  const step = 90 / view.s, keys = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+  if (keys[e.key]) { e.preventDefault(); view.x += keys[e.key][0]; view.y += keys[e.key][1]; clamp(); request(); }
+  else if (e.key === '+' || e.key === '=') zoomAt(W / 2, H / 2, 1.4);
+  else if (e.key === '-') zoomAt(W / 2, H / 2, 1 / 1.4);
+  else if (e.key === '0') go(0, 0, fit);
+  else if ('ifjIFJ'.includes(e.key)) { const id = { i: 'insets', f: 'frames', j: 'jets' }[e.key.toLowerCase()], box = $(id); box.checked = !box.checked; box.onchange(); }
+});
+
+M.places.forEach(p => {
+  const b = document.createElement('button');
+  b.textContent = p.label;
+  b.onclick = () => p.whole ? go(0, 0, fit) : go(p.x, p.y, Math.min(W, H) / p.span);
+  $('places').appendChild(b);
+});
+$('finest').textContent = M.finest;
+$('notice').textContent = M.notice;
+showFrame(null);
+resize();
+</script>

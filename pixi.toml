@@ -21,6 +21,7 @@ cog = "python -m enceladus_ready.cli cog"
 tile = "python -m enceladus_ready.cli tile"
 ephem = "python -m enceladus_ready.cli ephem"
 inset = "python -m enceladus_ready.cli inset"
+viewer = "python -m enceladus_ready.cli viewer"
 all = "python -m enceladus_ready.cli all"
 test = "python -m pytest tests -q"
 

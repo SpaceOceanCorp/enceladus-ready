@@ -25,7 +25,9 @@ pixi run test
 
 This downloads about 650 MB from USGS and takes under two minutes after that.
 
-After `pixi run all`, run `pixi run inset` to build the optional high-resolution insets. It downloads 46 MB of calibrated Cassini frames and takes about four minutes.
+After `pixi run all`, run `pixi run inset` to build the optional high-resolution insets. It downloads about 120 MB of calibrated Cassini frames and can take 30 minutes or more.
+
+Then run `pixi run viewer` and open `out/viewer/enceladus-viewer.html` in a browser for a zoomable view of the tile and insets. The images are built on your machine and are not stored in this repository.
 
 ## Using the Unreal kit
 
@@ -74,7 +76,7 @@ Plume data here follows the discrete-jet reading (Porco et al. 2014). Spitale et
 
 * Rebuilding moon coordinates from the exported files alone matches the DEM to 0.01 m (relief) and 0.2 m (true shape) RMS.
 * Published jets land on the tiger stripes in the exported mosaic. Only 1.4% of random rotations of the jet pattern score as well, and flipping the longitude sign scores below the random average.
-* Six of twelve candidate Cassini frames were accepted for the insets. Each sits within about 100 m of the base mosaic in an independent check, and moving any of them 1 km removes the match. The other six did not meet the match threshold and are left out.
+* Sixteen of thirty candidate Cassini frames, from five flybys, were accepted for the insets. Each sits within 200 m of the base mosaic in an independent check, and moving any of them 1 km removes the match. The other fourteen did not meet the match threshold and are left out.
 * The kit has not yet been opened in Unreal Engine.
 
 ## Sources and credit
@@ -82,7 +84,7 @@ Plume data here follows the discrete-jet reading (Porco et al. 2014). Spitale et
 * Schenk, P.M. and McKinnon, W.B. (2024). New global topography of Enceladus. Icarus 408, 115827. doi:10.1016/j.icarus.2023.115827. Distributed by USGS Astrogeology and the Planetary Data System.
 * Porco, C., DiNino, D. and Nimmo, F. (2014). Astronomical Journal 148, 45, Table 2.
 * NASA/JPL Horizons for Sun and Saturn geometry.
-* Cassini ISS calibrated frames for the insets, from the PDS Ring-Moon Systems Node. Image credit: NASA/JPL-Caltech/Space Science Institute.
+* Cassini ISS calibrated frames for the insets and viewer, from the PDS Ring-Moon Systems Node. Image credit: NASA/JPL-Caltech/Space Science Institute.
 
 Downloaded data and generated outputs are not stored in this repository. The pipeline fetches them from the original sources.
 

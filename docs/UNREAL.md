@@ -129,25 +129,28 @@ Vertices are 200 m apart, so the ground will look faceted up close. Any detail a
 
 ### Optional: high-resolution Cassini insets, relief terrain only
 
-Run `pixi run inset` after `pixi run all`. It adds real Cassini imagery from 31 October 2008 over patches of the tile, as fine as about 9 m per pixel, in `relief/insets/e5_2008/`. Each tier has an albedo, a blend mask and a source map, and `inset.json` records the bounds and alignment results.
+Run `pixi run inset` after `pixi run all`. It adds real Cassini imagery from five flybys over patches of the tile, as fine as about 9 m per pixel, in `relief/insets/cassini_iss/`. Each tier has an albedo, a blend mask and a source map, and `inset.json` records the bounds, frames and alignment results. Use the values there if you change the pipeline.
 
 | Tier | Pixels | World min X, Y (cm) | World max X, Y (cm) | Real coverage |
 |---|---|---|---|---|
-| `wide_20m` | 3532 x 4939 | -1702000, 204000 | 5360000, 10080000 | 2,234 km² |
-| `detail_10m` | 1918 x 1551 | -29000, 205000 | 1888000, 1755000 | 152 km² |
+| `wide` (25 m) | 8065 x 7332 | -10080000, -8247500 | 10080000, 10080000 | 9,264 km² |
+| `detail_01` (10 m) | 3134 x 3151 | -1203000, -1665000 | 1930000, 1485000 | 305 km² |
+| `detail_02` (10 m) | 5554 x 2745 | 858000, -5314000 | 6411000, -2570000 | 478 km² |
 
 ```text
 UV        = (WorldPosition.XY - WorldMin) / (WorldMax - WorldMin)
 TextureUV = (UV * (Size - 1) + 0.5) / Size
-Color     = lerp(BaseAlbedo, Wide20Albedo,   Wide20Mask)
-Color     = lerp(Color,      Detail10Albedo, Detail10Mask)
+Color     = lerp(BaseAlbedo, WideAlbedo,     WideMask)
+Color     = lerp(Color,      Detail01Albedo, Detail01Mask)
+Color     = lerp(Color,      Detail02Albedo, Detail02Mask)
 ```
 
 * Use the same texture settings as the base albedo, with Masks compression for the masks. Outside each tier's bounds, treat its mask as zero.
 * These textures are not power-of-two, so use Never Stream or a Power of Two padding mode, and confirm that they display at full resolution.
 * This is sharper imagery on the same terrain. Height remains about 400 m, so the ridges you see are 2D until someone adds real geometry.
 * Contrast is reduced for display and deep shadows are smoothed to hide Cassini's compression blocks. Do not use these pixels as reflectance values.
-* Six of twelve candidate frames met the match threshold. Accepted frames sit within about 100 m of the base mosaic.
+* Sixteen of thirty candidate frames met the match threshold. Accepted frames sit within 200 m of the base mosaic.
+* Sunlight direction differs between flybys, so shadows can change direction where frames from different dates meet.
 * Credit inset imagery to NASA/JPL-Caltech/Space Science Institute, along with the credits in step 7.
 
 ## 5. Vents
