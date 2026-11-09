@@ -127,6 +127,29 @@ The albedo has Cassini's shadows built in at small scale, so lit slopes can look
 
 Vertices are 200 m apart, so the ground will look faceted up close. Any detail added to fix that is invented. See step 7.
 
+### Optional: high-resolution Cassini insets, relief terrain only
+
+Run `pixi run inset` after `pixi run all`. It adds real Cassini imagery from 31 October 2008 over patches of the tile, as fine as about 9 m per pixel, in `relief/insets/e5_2008/`. Each tier has an albedo, a blend mask and a source map, and `inset.json` records the bounds and alignment results.
+
+| Tier | Pixels | World min X, Y (cm) | World max X, Y (cm) | Real coverage |
+|---|---|---|---|---|
+| `wide_20m` | 3532 x 4939 | -1702000, 204000 | 5360000, 10080000 | 2,234 km² |
+| `detail_10m` | 1918 x 1551 | -29000, 205000 | 1888000, 1755000 | 152 km² |
+
+```text
+UV        = (WorldPosition.XY - WorldMin) / (WorldMax - WorldMin)
+TextureUV = (UV * (Size - 1) + 0.5) / Size
+Color     = lerp(BaseAlbedo, Wide20Albedo,   Wide20Mask)
+Color     = lerp(Color,      Detail10Albedo, Detail10Mask)
+```
+
+* Use the same texture settings as the base albedo, with Masks compression for the masks. Outside each tier's bounds, treat its mask as zero.
+* These textures are not power-of-two, so use Never Stream or a Power of Two padding mode, and confirm that they display at full resolution.
+* This is sharper imagery on the same terrain. Height remains about 400 m, so the ridges you see are 2D until someone adds real geometry.
+* Contrast is reduced for display and deep shadows are smoothed to hide Cassini's compression blocks. Do not use these pixels as reflectance values.
+* Six of twelve candidate frames met the match threshold. Accepted frames sit within about 100 m of the base mosaic.
+* Credit inset imagery to NASA/JPL-Caltech/Space Science Institute, along with the credits in step 7.
+
 ## 5. Vents
 
 Import `vents/porco2014_jets.csv` as a DataTable using a row struct with these fields. The first CSV column, `Name`, becomes the row name.

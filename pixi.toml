@@ -13,12 +13,14 @@ scipy = ">=1.11"
 pillow = ">=10"
 matplotlib-base = ">=3.8"
 pytest = ">=8"
+py-opencv = ">=4.9"
 
 [tasks]
 fetch = "python -m enceladus_ready.cli fetch"
 cog = "python -m enceladus_ready.cli cog"
 tile = "python -m enceladus_ready.cli tile"
 ephem = "python -m enceladus_ready.cli ephem"
+inset = "python -m enceladus_ready.cli inset"
 all = "python -m enceladus_ready.cli all"
 test = "python -m pytest tests -q"
 

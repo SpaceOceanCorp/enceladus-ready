@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import argparse
 
-from . import ancillary, serve, sources, tile, validate
+from . import ancillary, inset, serve, sources, tile, validate
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("step", choices=["fetch", "cog", "tile", "ephem", "all"])
+    parser.add_argument("step", choices=["fetch", "cog", "tile", "ephem", "inset", "all"])
     step = parser.parse_args().step
 
     if step in ("fetch", "all"):
@@ -24,6 +24,8 @@ def main() -> None:
         tile.build(dem, mosaic)
         ancillary.write_vents(dem)
         validate.run(dem)
+    if step == "inset":
+        inset.build()
 
 
 if __name__ == "__main__":
