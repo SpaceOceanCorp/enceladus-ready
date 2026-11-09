@@ -26,6 +26,8 @@ This downloads about 650 MB from USGS and takes under two minutes after that.
 
 ## Using the Unreal kit
 
+See the [full Unreal walkthrough](docs/UNREAL.md) for import settings, test points, materials, vents and lighting.
+
 There are two versions of the same ground. Each folder has a `tile.json` with every number you need.
 
 | Folder | Geometry | Use it for |
