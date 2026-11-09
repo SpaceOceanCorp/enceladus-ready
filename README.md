@@ -33,7 +33,7 @@ There are two versions of the same ground. Each folder has a `tile.json` with ev
 | `relief/` | Flat plane, height above the reference ellipsoid | Walking, driving, framing. Gravity straight down works. |
 | `true_shape/` | Real 3D curvature in a plane tangent at the pole | Horizons, orbital cameras, line of sight. |
 
-**Import by hand:** Landscape mode, New, Import from File, choose `heightmap.png`. Set the component layout, location and scale from the `landscape` block of `tile.json`.
+**Import by hand:** Landscape mode, New, Import from File, choose `heightmap.png`. Set the component layout and scale from the `landscape` block of `tile.json`, then click Import. Afterward, select the Landscape actor and type `location_cm` into its Details panel. That value is the actor's corner location, and the New Landscape panel may treat its own Location field as the terrain's center.
 
 **Import by script:** [UnrealDEMLandscape](https://github.com/raulcastar/UnrealDEMLandscape) (UE 5.7) accepts `heightmap.r16` and the same numbers.
 
