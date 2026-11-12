@@ -26,6 +26,11 @@ CITATION = (
     "Schenk, P.M. and McKinnon, W.B. (2024). New global topography of Enceladus. "
     "Icarus 408, 115827. doi:10.1016/j.icarus.2023.115827"
 )
+SOURCE_RECORDS = {
+    DEM: "https://astrogeology.usgs.gov/search/map/enceladus-cassini-global-dem-200m-schenk",
+    MOSAIC: "https://astrogeology.usgs.gov/search/map/enceladus-cassini-global-mosaic-100m-schenk",
+}
+CREDIT = "Schenk and McKinnon (2024), Lunar and Planetary Institute / USRA"
 JETS_CITATION = "Porco, C., DiNino, D. and Nimmo, F. (2014). Astronomical Journal 148, 45, Table 2."
 
 DOWNLOADS = [

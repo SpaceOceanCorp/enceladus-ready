@@ -29,6 +29,12 @@ After `pixi run all`, run `pixi run inset` to build the optional high-resolution
 
 Then run `pixi run viewer` and open `out/viewer/enceladus-viewer.html` in a browser for a zoomable view of the tile and insets. The images are built on your machine and are not stored in this repository.
 
+## Hosted files
+
+`pixi run release` gathers the files for public hosting into `out/release/`: the two cloud-optimized rasters, the Unreal kit as one zip, the STAC catalog, `DATA-NOTICE.md` and `SHA256SUMS.txt`. `DATA-NOTICE.md` lists every change made to the original data and links to the original USGS records and files, and a copy sits inside the kit zip. The cloud-optimized rasters also carry the citation, the change summary and the original file and record links in their metadata.
+
+The Porco et al. (2014) jet table and the Cassini image insets are built locally but are left out of the hosted set.
+
 ## Using the Unreal kit
 
 See the [full Unreal walkthrough](docs/UNREAL.md) for import settings, test points, materials, vents and lighting.
@@ -81,7 +87,7 @@ Plume data here follows the discrete-jet reading (Porco et al. 2014). Spitale et
 
 ## Sources and credit
 
-* Schenk, P.M. and McKinnon, W.B. (2024). New global topography of Enceladus. Icarus 408, 115827. doi:10.1016/j.icarus.2023.115827. Distributed by USGS Astrogeology and the Planetary Data System.
+* Schenk, P.M. and McKinnon, W.B. (2024). New global topography of Enceladus. Icarus 408, 115827. doi:10.1016/j.icarus.2023.115827. Lunar and Planetary Institute / USRA. Distributed by USGS Astrogeology and the Planetary Data System: [DEM record](https://astrogeology.usgs.gov/search/map/enceladus-cassini-global-dem-200m-schenk), [mosaic record](https://astrogeology.usgs.gov/search/map/enceladus-cassini-global-mosaic-100m-schenk).
 * Porco, C., DiNino, D. and Nimmo, F. (2014). Astronomical Journal 148, 45, Table 2.
 * NASA/JPL Horizons for Sun and Saturn geometry.
 * Cassini ISS calibrated frames for the insets and viewer, from the PDS Ring-Moon Systems Node. Image credit: NASA/JPL-Caltech/Space Science Institute.

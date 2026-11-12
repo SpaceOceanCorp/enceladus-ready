@@ -8,7 +8,7 @@ import shutil
 import rasterio
 import rasterio.shutil as rio_shutil
 
-from .sources import CITATION, DEM, MOSAIC, OUT, RAW, sha256
+from .sources import CITATION, DEM, MOSAIC, OUT, RAW, SOURCE_RECORDS, USGS, sha256
 
 PRODUCTS = {
     "dem": {
@@ -39,7 +39,14 @@ def make_cogs() -> dict:
         with rasterio.open(working, "r+") as dst:
             if product["unit"]:
                 dst.units = (product["unit"],)
-            dst.update_tags(CITATION=CITATION, DERIVED_BY="enceladus-ready 0.1.0, lossless re-encoding")
+            dst.update_tags(
+                CITATION=CITATION,
+                DERIVED_BY="enceladus-ready 0.1.0, lossless re-encoding",
+                CHANGES="Re-encoded as a cloud-optimized GeoTIFF (DEFLATE, 512 px tiles, averaged overviews), units tag added. Pixel values unchanged.",
+                ORIGINAL_DATA=f"{USGS}/{product['source']}",
+                ORIGINAL_RECORD=SOURCE_RECORDS[product["source"]],
+                ENDORSEMENT="Not endorsed by the authors, LPI/USRA, NASA or USGS.",
+            )
         rio_shutil.copy(
             working, target, driver="COG", compress="DEFLATE", predictor="YES",
             blocksize=512, overview_resampling="average", num_threads="ALL_CPUS", bigtiff="IF_SAFER",
@@ -86,6 +93,9 @@ def write_stac(cogs: dict) -> None:
             "links": [
                 {"rel": "root", "href": "./collection.json", "type": "application/json"},
                 {"rel": "parent", "href": "./collection.json", "type": "application/json"},
+                {"rel": "via", "href": SOURCE_RECORDS[product["source"]], "type": "text/html", "title": "Original USGS record"},
+                {"rel": "derived_from", "href": f"{USGS}/{product['source']}", "type": "image/tiff; application=geotiff", "title": "Original file"},
+                {"rel": "cite-as", "href": "https://doi.org/10.1016/j.icarus.2023.115827", "title": CITATION},
             ],
             "collection": "enceladus-ready",
         }

@@ -22,6 +22,7 @@ tile = "python -m enceladus_ready.cli tile"
 ephem = "python -m enceladus_ready.cli ephem"
 inset = "python -m enceladus_ready.cli inset"
 viewer = "python -m enceladus_ready.cli viewer"
+release = "python -m enceladus_ready.cli release"
 all = "python -m enceladus_ready.cli all"
 test = "python -m pytest tests -q"
 
