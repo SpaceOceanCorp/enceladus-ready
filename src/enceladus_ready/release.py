@@ -102,7 +102,10 @@ def _place(source: Path, target: Path) -> None:
 
 def _kit_zip(target: Path, notice: str) -> None:
     with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-        archive.writestr("south_polar_201km/DATA-NOTICE.md", notice)
+        # Fixed time stamp so rebuilding gives the same zip and checksum.
+        info = zipfile.ZipInfo("south_polar_201km/DATA-NOTICE.md", date_time=(2024, 8, 12, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_DEFLATED
+        archive.writestr(info, notice, compresslevel=6)
         for part in KIT_PARTS:
             for path in sorted((KIT / part).rglob("*")):
                 rel = path.relative_to(KIT)
@@ -147,7 +150,8 @@ def build() -> Path:
     files += _stac(RELEASE)
 
     lines = [f"{sha256(path)}  {path.name}" for path in files]
-    (RELEASE / "SHA256SUMS.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # Unix line endings, so `sha256sum -c` works on Linux and macOS.
+    (RELEASE / "SHA256SUMS.txt").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     for path in files:
         print(f"{path.stat().st_size / 1e6:9.1f} MB  {path.name}")
     return RELEASE

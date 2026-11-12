@@ -41,3 +41,30 @@ def test_stac_assets_point_beside_the_catalog(tmp_path, monkeypatch):
     target.mkdir()
     release._stac(target)
     assert json.loads((target / "item.json").read_text())["assets"]["data"]["href"] == "./a_cog.tif"
+
+
+def test_checksum_file_uses_unix_line_endings(tmp_path, monkeypatch):
+    out = tmp_path / "out"
+    for product in release.PRODUCTS.values():
+        cog = out / "cog" / product["source"].replace(".tif", "_cog.tif")
+        cog.parent.mkdir(parents=True, exist_ok=True)
+        cog.write_bytes(b"x")
+    kit = out / "unreal" / "south_polar_201km"
+    (kit / "relief").mkdir(parents=True)
+    (kit / "relief" / "tile.json").write_text("{}")
+    (out / "stac").mkdir()
+    monkeypatch.setattr(release, "OUT", out)
+    monkeypatch.setattr(release, "KIT", kit)
+    monkeypatch.setattr(release, "RELEASE", out / "release")
+    release.build()
+    assert b"\r" not in (out / "release" / "SHA256SUMS.txt").read_bytes()
+
+
+def test_kit_zip_is_reproducible(tmp_path, monkeypatch):
+    kit = tmp_path / "kit"
+    (kit / "relief").mkdir(parents=True)
+    (kit / "relief" / "tile.json").write_text("{}")
+    monkeypatch.setattr(release, "KIT", kit)
+    release._kit_zip(tmp_path / "a.zip", "notice")
+    release._kit_zip(tmp_path / "b.zip", "notice")
+    assert (tmp_path / "a.zip").read_bytes() == (tmp_path / "b.zip").read_bytes()
