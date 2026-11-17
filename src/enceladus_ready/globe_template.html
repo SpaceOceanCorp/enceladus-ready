@@ -111,6 +111,19 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #divehint .modes{display:flex;gap:0;border:1px solid rgba(255,255,255,.22);border-radius:16px;overflow:hidden}
 #divehint .modes button{border:0;border-radius:0;background:transparent;color:#cfd6e0}
 #divehint .modes button.go{background:#e9edf3;color:#0b1220;font-weight:600}
+#landhint{position:absolute;left:16px;right:16px;margin:0 auto;width:fit-content;top:70px;z-index:6;padding:8px 8px 8px 16px;font-size:14px;display:none;align-items:center;gap:10px;background:rgba(16,18,24,.96);color:#f2f5f9;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px)}
+#landhint.open{display:flex}
+#landhint button,#walkhud button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:16px;padding:6px 12px;font:500 13px Inter,sans-serif;cursor:pointer}
+#landhint button:hover,#walkhud button:hover{background:#323947}
+#landhint button.go,#walkhud button.go{background:#e9edf3;color:#0b1220;font-weight:600}
+#walkhud{position:absolute;left:16px;bottom:44px;z-index:6;width:min(360px,calc(100vw - 32px));padding:12px 14px;background:rgba(16,18,24,.92);color:#f2f5f9;font:13px/1.45 Inter,sans-serif}
+#walkhud.hide{display:none}
+#walkhud h3{margin:0 0 6px;font:600 15px Inter,sans-serif}
+#walkhud dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0 0 8px}#walkhud dt{color:#9aa4b2}#walkhud dd{margin:0}
+#walkhud .row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+#walkhud .pad{display:grid;grid-template-columns:repeat(3,44px);gap:4px;margin:6px 0}
+#walkhud .pad button{padding:8px 0;border-radius:10px;touch-action:none}
+#walkhud .help{color:#9aa4b2;font-size:12px;margin:6px 0 0}
 #diveStripes{background:var(--accent)!important;color:#0b1220!important;border-color:var(--accent)!important;font-weight:600!important}
 #insideTemp{font-size:12.5px;color:#cfd6e0;margin:6px 0}
 #insideTemp .tp{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:4px;font-variant-numeric:tabular-nums}
@@ -156,6 +169,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
   <button class="chip" id="chipSec" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M3 21h18"/></svg>Cross-section</button>
   <button class="chip" id="chipInside" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>Look inside</button>
   <button class="chip" id="chipDive" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 15c2 0 2-1.5 4-1.5S8 15 10 15s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M2 20c2 0 2-1.5 4-1.5S8 20 10 20s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><circle cx="12" cy="6" r="3"/></svg>Dive</button>
+  <button class="chip" id="chipLand" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg>Land</button>
 </div>
 <div class="card" id="divehint"><span id="divehintText">Click a spot on the moon to dive into the ocean below it</span><span class="modes"><button id="diveScuba" class="go">Scuba</button><button id="diveSub">Submarine</button></span><button class="go" id="diveStripes">Dive under the tiger stripes</button><button id="diveCancel">Cancel</button></div>
 <div class="card hide" id="insidepanel">
@@ -220,8 +234,16 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 </div>
 
 <a id="brand" href="https://spaceoceancorp.com" target="_blank" rel="noopener" aria-label="Space Ocean Corp"><img src="spaceocean-wordmark-white.png" alt="Space Ocean Corp"></a>
+<div class="card" id="landhint"><span>Click a spot on the moon to land there</span><button class="go" id="landStripes">Land at the tiger stripes</button><button id="landSaturn">Land under Saturn</button><button id="landCancel">Cancel</button></div>
+<div class="card hide" id="walkhud">
+  <h3>On the surface of Enceladus</h3>
+  <dl><dt>Position</dt><dd id="walkpos"></dd><dt>Ground</dt><dd id="walkelev"></dd><dt>You are</dt><dd id="walkhop"></dd><dt>Sky</dt><dd id="walksat"></dd></dl>
+  <div class="row"><button data-mode="walk" class="go">Walk</button><button data-mode="rover">Rover</button><button data-mode="skim">Skim</button><button id="walkJump">Jump</button><button id="walkSat">Look at Saturn</button><button id="walkExit">Back to orbit</button></div>
+  <div class="pad"><span></span><button data-k="w" aria-label="Forward">▲</button><span></span><button data-k="arrowleft" aria-label="Turn left">⟲</button><button data-k="s" aria-label="Back">▼</button><button data-k="arrowright" aria-label="Turn right">⟳</button></div>
+  <p class="help">W/S or ↑/↓ move · A/D step sideways · ←/→ or drag to look · Shift go faster · Space jump (gravity is 1/87 of Earth's) · Esc leave</p>
+</div>
 <div id="status">
-  <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
+  <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · Saturn: Solar System Scope (CC BY 4.0) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
   <span id="scale"><i></i><span></span></span>
   <span id="cursor">—</span>
   <span id="cam"></span>
@@ -335,6 +357,7 @@ function clampDisc() {
 }
 const cv = scene.canvas;
 cv.addEventListener('pointerdown', e => {
+  if (typeof walk !== 'undefined' && walk.on) return;   // on the surface, dragging looks around instead
   if (e.button !== 0 || e.ctrlKey || e.altKey || drag.id !== null) return;
   const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
   const hit = !e.shiftKey && hitsGlobe(x, y);
@@ -373,6 +396,7 @@ cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', 
 // Two-finger touch belongs to Cesium's pinch zoom and tilt.
 cv.addEventListener('touchstart', e => { if (e.touches.length > 1) { drag.id = null; drag.mode = null; drag.pendX = drag.pendY = 0; } }, { passive: true });
 scene.preRender.addEventListener(() => {
+  if (typeof walk !== 'undefined' && walk.on) return;
   if (drag.mode === 'spin' || drag.mode === 'move') {
     // Ease toward the pointer instead of jumping: apply half of what is pending each frame.
     const sx = drag.pendX * 0.5, sy = drag.pendY * 0.5;
@@ -549,6 +573,8 @@ function refreshDot(o) {
 }
 function markSelected(o) { const old = selected; selected = o; refreshDot(old); refreshDot(o); }
 handler.setInputAction(e => {
+  if (walk.picking) { walk.pick(e.position); return; }
+  if (walk.on) return;
   if (dive.picking) { dive.pick(e.position); return; }
   if (inside.picking) { inside.pick(e.position); return; }
   if (section.picking) { section.addPoint(e.position); return; }
@@ -559,6 +585,7 @@ handler.setInputAction(e => {
 // Double-click always zooms in toward the spot under the pointer, like a web map.
 viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(C.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 handler.setInputAction(e => {
+  if (walk.on) return;
   const ray = camera.getPickRay(e.position); if (!ray) return;
   const target = globe.pick(ray, scene) || camera.pickEllipsoid(e.position, E); if (!target) return;
   const dist = C.Cartesian3.distance(camera.positionWC, target);
@@ -1122,7 +1149,9 @@ if (INT) {
   $('diveSub').onclick = () => setDiveMode('sub');
 } else $('chipDive').classList.add('hide');
 
+/*__WALK__*/
 window.encViewer = viewer;
+window.encWalk = walk;
 })();
 </script>
 </body>
