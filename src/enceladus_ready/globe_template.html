@@ -64,13 +64,19 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #scale i{display:block;height:6px;border:1px solid var(--muted);border-top:0}
 #credit{margin-right:auto;overflow:hidden;text-overflow:ellipsis}
 .hide{display:none!important}
-#chips{position:absolute;top:16px;right:16px;z-index:5;display:flex;gap:8px}
+#chips{position:absolute;top:16px;right:16px;z-index:5;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 430px)}
+#insidepanel input[type=range]{width:100%;accent-color:var(--accent)}
+#insidepanel p{margin:8px 0;font-size:13px;color:#cfd6e0}
+#insidepanel select{width:100%;margin-top:4px;background:#1f232b;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px;font:13px Inter,sans-serif}
+#insidepanel .seg button{flex:1 1 30%;text-align:center}
+#insidepanel .lnk{background:none;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:5px 12px;font:500 12px Inter,sans-serif;cursor:pointer}
+#insidepanel .top{display:flex;justify-content:space-between;align-items:center}
 .chip{display:flex;align-items:center;gap:7px;height:40px;padding:0 16px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:500 14px Inter,sans-serif;cursor:pointer;box-shadow:var(--shadow);backdrop-filter:blur(8px)}
 .chip:hover{background:#262a33}
 .chip.on{background:var(--accent);color:#0b1220;border-color:var(--accent)}
 .chip svg{flex:none}
-#icepanel{position:absolute;top:66px;right:16px;width:320px;max-width:calc(100vw - 32px);max-height:max(220px,calc(100vh - 360px));overflow:auto;padding:14px 16px;z-index:4}
-#icepanel h3{margin:0 0 8px;font-size:15px;font-weight:600}
+#icepanel,#insidepanel{position:absolute;top:66px;right:16px;width:320px;max-width:calc(100vw - 32px);max-height:max(220px,calc(100vh - 360px));overflow:auto;padding:14px 16px;z-index:4}
+#insidepanel h3,#icepanel h3{margin:0 0 8px;font-size:15px;font-weight:600}
 .seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .seg button{flex:1 1 45%;padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text);font:500 12px Inter,sans-serif;cursor:pointer;text-align:left;line-height:1.25}
 .seg button small{display:block;color:var(--muted);font-weight:400}
@@ -80,8 +86,8 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 .legendticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 #icepanel ul{margin:10px 0 6px;padding-left:18px;color:#cfd6e0;font-size:12.5px}
 #icepanel li{margin:3px 0}
-#icepanel .cite{font-size:11.5px;color:var(--muted)}
-#icepanel .row{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;margin-top:8px}
+#insidepanel .cite,#icepanel .cite{font-size:11.5px;color:var(--muted)}
+#insidepanel .row,#icepanel .row{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;margin-top:8px}
 #icepanel input[type=range]{width:130px;accent-color:var(--accent)}
 #section{position:absolute;left:16px;bottom:40px;width:min(720px,calc(100vw - 104px));z-index:6;padding:12px 16px 10px;display:none}
 #section.open{display:block}
@@ -103,9 +109,9 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
   #layers{flex-wrap:wrap;right:72px}
   #opts{min-width:0;width:100%;order:-1;padding:8px 12px}
   #credit{display:none}
-  #chips{top:72px}
+  #chips{top:72px;max-width:none;left:16px}
   .chip{height:36px;padding:0 12px;font-size:13px}
-  #icepanel{top:116px;max-height:45vh}
+  #icepanel,#insidepanel{top:116px;max-height:45vh}
   #section{width:auto;right:16px;bottom:34px}
   #section svg{height:180px}
 }
@@ -132,6 +138,27 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 <div id="chips">
   <button class="chip" id="chipIce" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2v20M5 5l14 14M19 5L5 19"/></svg>Ice thickness</button>
   <button class="chip" id="chipSec" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M3 21h18"/></svg>Cross-section</button>
+  <button class="chip" id="chipInside" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>Look inside</button>
+</div>
+<div class="card hide" id="insidepanel">
+  <div class="top"><h3>Look inside</h3><button class="iconbtn" id="insideClose" aria-label="Close">&#10005;</button></div>
+  <div id="insideHint">
+    <p>Click anywhere on the moon to choose where to cut in, or</p>
+    <button class="zoombtn" id="insideStripes">Start under the tiger stripes</button>
+  </div>
+  <div id="insideControls" class="hide">
+    <div class="row"><span>Depth of the cut</span><span id="insideDepthV">0 km</span></div>
+    <input type="range" id="insideDepth" min="0" max="250" step="0.1" value="0" aria-label="Depth of the cut">
+    <div class="seg" id="insideStops">
+      <button data-stop="surface">Surface</button><button data-stop="ice">Base of ice</button><button data-stop="ocean">Mid-ocean</button>
+      <button data-stop="floor">Seafloor</button><button data-stop="core">Into core</button><button data-stop="centre">Centre</button>
+    </div>
+    <p id="insideWhere"></p>
+    <p class="cite" id="insideColumn"></p>
+    <div class="row" style="display:block"><span>Interior model</span><select id="insideModelSel"></select></div>
+    <p style="margin-top:10px"><button class="lnk" id="insideMove">Choose another spot</button></p>
+  </div>
+  <p class="cite">The cut removes a cap of the moon, so deeper cuts open a wider window. Depths are true scale. The ice, ocean and core come from the selected model, not from direct observation.</p>
 </div>
 <div class="card hide" id="icepanel">
   <h3>Ice shell thickness</h3>
@@ -502,6 +529,7 @@ function refreshDot(o) {
 }
 function markSelected(o) { const old = selected; selected = o; refreshDot(old); refreshDot(o); }
 handler.setInputAction(e => {
+  if (inside.picking) { inside.pick(e.position); return; }
   if (section.picking) { section.addPoint(e.position); return; }
   const o = pickMarker(e.position);
   if (o) { markSelected(o); showInfo(o); }   // just open the details; the view stays where it is
@@ -670,12 +698,14 @@ function setIceModel(key) {
   ice.layer.alpha = +iceAlpha.value; ice.layer.show = ice.on;
   try { localStorage.setItem('encIceModel', m.key); } catch (_) {}
   if (section.points.length === 2) section.draw();
+  if (inside.on && inside.spot) inside.build();
+  const sel = document.getElementById('insideModelSel'); if (sel) sel.value = m.key;
 }
 function setIce(on) {
   ice.on = on;
   const chip = document.getElementById('chipIce');
   chip.classList.toggle('on', on); chip.setAttribute('aria-pressed', on);
-  document.getElementById('icepanel').classList.toggle('hide', !on);
+  document.getElementById('icepanel').classList.toggle('hide', !on || inside.on);
   if (on && !ice.model) { let k = null; try { k = localStorage.getItem('encIceModel'); } catch (_) {} setIceModel(k); }
   if (ice.layer) ice.layer.show = on;
 }
@@ -800,6 +830,206 @@ if (INT) {
   window.addEventListener('resize', () => { if (section.isOpen()) section.draw(); });
   window.addEventListener('keydown', e => { if (e.key === 'Escape' && (section.picking || section.isOpen())) section.stop(); });
 } else $('chips').classList.add('hide');
+
+// ---------- look inside: slice a cap off the moon and see ice, ocean and core ----------
+// A flat cut perpendicular to the local vertical removes everything above it. Deeper cuts open a
+// wider window (like slicing the top off an orange), down to the centre. The cut face is coloured
+// by layer with the ocean translucent, and below it we draw the underside of the ice shell and the
+// rocky core, so you can look down through the water. Uses the selected ice-thickness model.
+const VC_VS = `
+in vec3 position3DHigh;
+in vec3 position3DLow;
+in vec4 color;
+in float batchId;
+out vec4 v_color;
+void main() {
+  vec4 p = czm_computePosition();
+  v_color = color;
+  gl_Position = czm_modelViewProjectionRelativeToEye * p;
+}`;
+const VC_FS = `
+in vec4 v_color;
+void main() { out_FragColor = v_color; }`;
+function vcAppearance(translucent) {
+  return new C.Appearance({
+    translucent, closed: false, vertexShaderSource: VC_VS, fragmentShaderSource: VC_FS,
+    renderState: C.Appearance.getDefaultRenderState(translucent, false, { cull: { enabled: false } }),
+  });
+}
+const VC_OPAQUE = vcAppearance(false), VC_TRANSLUCENT = vcAppearance(true);
+function colorMesh(pos, col, idx, translucent) {
+  const geometry = new C.Geometry({
+    attributes: {
+      position: new C.GeometryAttribute({ componentDatatype: C.ComponentDatatype.DOUBLE, componentsPerAttribute: 3, values: pos }),
+      color: new C.GeometryAttribute({ componentDatatype: C.ComponentDatatype.UNSIGNED_BYTE, componentsPerAttribute: 4, normalize: true, values: col }),
+    },
+    indices: idx.length > 65535 ? new Uint32Array(idx) : new Uint16Array(idx),
+    primitiveType: C.PrimitiveType.TRIANGLES,
+    boundingSphere: C.BoundingSphere.fromVertices(pos),
+  });
+  return new C.Primitive({ geometryInstances: new C.GeometryInstance({ geometry }), appearance: translucent ? VC_TRANSLUCENT : VC_OPAQUE,
+    asynchronous: false, compressVertices: false, cull: false });
+}
+const toLatLon = (x, y, z) => { const r = Math.hypot(x, y, z); return [Math.asin(z / r) * 180 / Math.PI, Math.atan2(y, x) * 180 / Math.PI, r]; };
+const noise = (x, y, z) => { const s = Math.sin(x * 12.9898e-4 + y * 78.233e-4 + z * 37.719e-4) * 43758.5453; return s - Math.floor(s); };
+
+const inside = {
+  on: false, picking: false, spot: null, depthKm: 0, prims: [], savedEx: null, raf: 0,
+  model() { return ice.model || INT.models[0]; },
+  frame() {
+    const n = C.Cartesian3.normalize(C.Cartesian3.fromDegrees(this.spot.lon, this.spot.lat, 0, E), new C.Cartesian3());
+    const ref = Math.abs(n.z) < 0.9 ? C.Cartesian3.UNIT_Z : C.Cartesian3.UNIT_X;
+    const u = C.Cartesian3.normalize(C.Cartesian3.cross(ref, n, new C.Cartesian3()), new C.Cartesian3());
+    const v = C.Cartesian3.cross(n, u, new C.Cartesian3());
+    return { n, u, v };
+  },
+  surfKm(lat, lon) { return (R + gridAt(INT.surface, lat, lon)) / 1000; },
+  clear() { this.prims.forEach(p => scene.primitives.remove(p)); this.prims = []; },
+  build() {
+    this.clear();
+    if (!this.spot) return;
+    const m = this.model(), { n, u, v } = this.frame();
+    const surf0 = this.surfKm(this.spot.lat, this.spot.lon);
+    const rcut = Math.max(surf0 - this.depthKm, 0.5) * 1000;   // metres from the centre
+    if (this.depthKm < 0.05) { globe.clippingPlanes = undefined; this.hideAbove(null, Infinity); return this.report(m, surf0, rcut); }
+    globe.clippingPlanes = new C.ClippingPlaneCollection({
+      planes: [new C.ClippingPlane(C.Cartesian3.negate(n, new C.Cartesian3()), rcut)],
+      edgeWidth: 1.5, edgeColor: C.Color.fromCssColorString('#cfe3f5') });
+    const cx = n.x * rcut, cy = n.y * rcut, cz = n.z * rcut;
+
+    // 1. The cut face: a disk in the plane, out to where the plane meets the surface.
+    const NA = 180, NR = 150, pos = [], col = [], idx = [];
+    const ocean = [36, 104, 186, 110];
+    for (let a = 0; a < NA; a++) {
+      const ph = 2 * Math.PI * a / NA, dx = Math.cos(ph) * u.x + Math.sin(ph) * v.x, dy = Math.cos(ph) * u.y + Math.sin(ph) * v.y, dz = Math.cos(ph) * u.z + Math.sin(ph) * v.z;
+      let smax = Math.sqrt(Math.max(surf0 * 1000 * surf0 * 1000 - rcut * rcut, 1));
+      for (let it = 0; it < 4; it++) {                         // follow the local surface radius
+        const [la, lo] = toLatLon(cx + dx * smax, cy + dy * smax, cz + dz * smax);
+        const sr = this.surfKm(la, lo) * 1000; smax = Math.sqrt(Math.max(sr * sr - rcut * rcut, 1));
+      }
+      for (let k = 0; k <= NR; k++) {
+        const sk = smax * Math.pow(k / NR, 0.85), x = cx + dx * sk, y = cy + dy * sk, z = cz + dz * sk;
+        const [la, lo, r] = toLatLon(x, y, z), c = interiorAt(la, lo, m), rk = r / 1000;
+        pos.push(x, y, z);
+        const iceBase = c.surf - c.ice;
+        if (rk > iceBase) {            // ice: whiter near the top, bluer near the base
+          const f = Math.min(Math.max((c.surf - rk) / Math.max(c.ice, 0.1), 0), 1), g = 0.92 + 0.08 * noise(x, y, z);
+          col.push((238 - 62 * f) * g, (246 - 40 * f) * g, (251 - 20 * f) * g, 255);
+        } else if (rk > m.core_km) col.push(...ocean);
+        else { const g = 0.8 + 0.25 * noise(x * 3, y * 3, z * 3), f = rk / m.core_km; col.push((150 - 40 * (1 - f)) * g, (112 - 34 * (1 - f)) * g, (80 - 26 * (1 - f)) * g, 255); }
+      }
+    }
+    const row = NR + 1;
+    for (let a = 0; a < NA; a++) { const a2 = (a + 1) % NA;
+      for (let k = 0; k < NR; k++) { const p = a * row + k, q = a2 * row + k; idx.push(p, q, p + 1, p + 1, q, q + 1); } }
+    // 2. Under the cut: the underside of the ice shell, seen from inside, and the rocky core.
+    const bowl = (radiusAt, colorAt) => {
+      const NP = 120, NT = 70, bp = [], bc = [], bi = [];
+      for (let a = 0; a < NP; a++) {
+        const ph = 2 * Math.PI * a / NP, cph = Math.cos(ph), sph = Math.sin(ph);
+        const dirAt = th => { const ct = Math.cos(th), st = Math.sin(th);
+          return [n.x * ct + (u.x * cph + v.x * sph) * st, n.y * ct + (u.y * cph + v.y * sph) * st, n.z * ct + (u.z * cph + v.z * sph) * st]; };
+        // Lowest polar angle still below the cut, by bisection on r(dir) * cos(theta) = rcut.
+        let lo = 0, hi = Math.PI;
+        if (radiusAt(...dirAt(0)) * 1000 > rcut) { for (let it = 0; it < 22; it++) { const mid = (lo + hi) / 2; (radiusAt(...dirAt(mid)) * 1000 * Math.cos(mid) > rcut) ? lo = mid : hi = mid; } lo = hi; }
+        for (let k = 0; k <= NT; k++) {
+          const th = lo + (Math.PI - lo) * k / NT, d = dirAt(th), r = radiusAt(...d) * 1000;
+          bp.push(d[0] * r, d[1] * r, d[2] * r); bc.push(...colorAt(d, th));
+        }
+      }
+      const rw = NT + 1;
+      for (let a = 0; a < NP; a++) { const a2 = (a + 1) % NP; for (let k = 0; k < NT; k++) { const p = a * rw + k, q = a2 * rw + k; bi.push(p, q, p + 1, p + 1, q, q + 1); } }
+      return colorMesh(new Float64Array(bp), new Uint8Array(bc), bi, false);
+    };
+    const dirLL = d => toLatLon(d[0], d[1], d[2]);
+    const reachesOcean = rcut / 1000 < Math.max(surf0 - 1, 0);
+    if (reachesOcean) {
+      this.prims.push(scene.primitives.add(bowl(
+        (x, y, z) => { const [la, lo] = dirLL([x, y, z]); const c = interiorAt(la, lo, m); return c.surf - c.ice; },
+        (d, th) => { const lit = 0.55 + 0.45 * (1 - th / Math.PI); const g = lit * (0.93 + 0.07 * noise(d[0] * 1e5, d[1] * 1e5, d[2] * 1e5));
+          return [150 * g, 196 * g, 232 * g, 255]; })));
+    }
+    this.prims.push(scene.primitives.add(bowl(
+      () => m.core_km,
+      (d, th) => { const lit = 0.5 + 0.5 * Math.max(Math.cos(th), 0); const g = lit * (0.8 + 0.25 * noise(d[0] * 4e5, d[1] * 4e5, d[2] * 4e5));
+        return [140 * g, 104 * g, 72 * g, 255]; })));
+    this.prims.push(scene.primitives.add(colorMesh(new Float64Array(pos), new Uint8Array(col), idx, true)));
+    this.hideAbove(n, rcut);
+    this.report(m, surf0, rcut);
+  },
+  hideAbove(n, rcut) {
+    // While a cut is open, markers would float over the removed cap or show through from the far
+    // side, so all of them (names, jets, outlines, the section line) are hidden until it closes.
+    const show = rcut === Infinity;
+    [labelSrc, jetSrc, areaSrc, secSrc].forEach(src => { src.show = show && (src !== jetSrc || $('optJets').checked) && (src !== labelSrc || $('optLabels').checked) && (src !== areaSrc || $('optHires').checked); });
+  },
+  report(m, surf0, rcut) {
+    const c = interiorAt(this.spot.lat, this.spot.lon, m), d = this.depthKm;
+    const iceBase = c.ice, seafloor = c.ice + c.ocean, coreDepth = surf0 - m.core_km;
+    let where;
+    if (d < 0.05) where = 'At the surface. Drag the slider or pick a stop to start cutting.';
+    else if (d < iceBase) where = `Inside the ice shell. ${(iceBase - d).toFixed(1)} km more ice before the ocean.`;
+    else if (d < seafloor) where = `In the ocean: ${(d - iceBase).toFixed(1)} km below the ice, ${(seafloor - d).toFixed(1)} km above the seafloor. Look down through the water to the rocky core.`;
+    else if (d < surf0 - 1) where = `Inside the rocky core, ${(d - coreDepth).toFixed(1)} km below the seafloor.`;
+    else where = 'Cut through the centre: the whole interior in one slice.';
+    $('insideDepthV').textContent = d.toFixed(d < 10 ? 1 : 0) + ' km';
+    $('insideWhere').textContent = where;
+    $('insideColumn').innerHTML = `Here: ice <b>${c.ice.toFixed(1)} km</b> · ocean <b>${c.ocean.toFixed(1)} km</b> · rocky core from <b>${coreDepth.toFixed(0)} km</b> down · centre at <b>${surf0.toFixed(0)} km</b>`;
+    $('insideModelSel').value = m.key;
+    const stops = { surface: 0, ice: iceBase, ocean: iceBase + c.ocean / 2, floor: seafloor, core: seafloor + (surf0 - seafloor) / 2, centre: surf0 - 0.5 };
+    document.querySelectorAll('#insideStops button').forEach(b => b.dataset.km = stops[b.dataset.stop].toFixed(2));
+    $('insideDepth').max = (surf0 - 0.5).toFixed(1);
+  },
+  setDepth(km, fly) {
+    this.depthKm = Math.max(0, km); $('insideDepth').value = this.depthKm;
+    cancelAnimationFrame(this.raf); this.raf = requestAnimationFrame(() => this.build());
+    if (fly) this.view();
+  },
+  view() {
+    const surf0 = this.surfKm(this.spot.lat, this.spot.lon), rc = Math.max(surf0 - this.depthKm, 1) * 1000;
+    const { n } = this.frame(), open = Math.sqrt(Math.max(surf0 * surf0 * 1e6 - rc * rc, 1));
+    const target = C.Cartesian3.multiplyByScalar(n, rc, new C.Cartesian3());
+    camera.flyToBoundingSphere(new C.BoundingSphere(target, 1), { offset: new C.HeadingPitchRange(camera.heading, C.Math.toRadians(-50), Math.max(open * 3.2, 90e3)), duration: 1.4 });
+  },
+  setSpot(lat, lon) {
+    this.spot = { lat, lon }; this.picking = false;
+    $('insideHint').classList.add('hide'); $('insideControls').classList.remove('hide');
+    this.setDepth(this.depthKm || 0, false);
+    this.view();
+  },
+  pick(pos) {
+    const ray = camera.getPickRay(pos); const p = ray && (globe.pick(ray, scene) || camera.pickEllipsoid(pos, E)); if (!p) return;
+    const c = E.cartesianToCartographic(p);
+    this.setSpot(C.Math.toDegrees(c.latitude), C.Math.toDegrees(c.longitude));
+  },
+  open() {
+    if (!ice.model) { let k = null; try { k = localStorage.getItem('encIceModel'); } catch (_) {} setIceModel(k); }
+    this.on = true; this.picking = true; this.spot = null; this.depthKm = 0;
+    this.savedEx = scene.verticalExaggeration; scene.verticalExaggeration = 1; updateHeights();
+    exag.disabled = true; $('exagv').textContent = '1× (true scale while looking inside)';
+    $('chipInside').classList.add('on'); $('chipInside').setAttribute('aria-pressed', true);
+    $('insidepanel').classList.remove('hide'); $('icepanel').classList.add('hide');
+    $('insideHint').classList.remove('hide'); $('insideControls').classList.add('hide');
+  },
+  close() {
+    this.on = false; this.picking = false; this.spot = null; this.clear();
+    globe.clippingPlanes = undefined;
+    this.hideAbove(null, Infinity);
+    if (this.savedEx !== null) { scene.verticalExaggeration = this.savedEx; exag.disabled = false; $('exagv').textContent = exag.value + '×'; updateHeights(); }
+    $('chipInside').classList.remove('on'); $('chipInside').setAttribute('aria-pressed', false);
+    $('insidepanel').classList.add('hide'); if (ice.on) $('icepanel').classList.remove('hide');
+  },
+};
+if (INT) {
+  $('chipInside').onclick = () => inside.on ? inside.close() : inside.open();
+  $('insideClose').onclick = () => inside.close();
+  $('insideStripes').onclick = () => inside.setSpot(-87.5, -30);
+  $('insideMove').onclick = () => { inside.picking = true; $('insideHint').classList.remove('hide'); };
+  $('insideDepth').oninput = e => inside.setDepth(+e.target.value, false);
+  $('insideModelSel').innerHTML = INT.models.map(m => `<option value="${m.key}">${esc(m.name)}</option>`).join('');
+  $('insideModelSel').onchange = e => setIceModel(e.target.value);
+  document.querySelectorAll('#insideStops button').forEach(b => b.onclick = () => inside.setDepth(+b.dataset.km, true));
+}
 
 window.encViewer = viewer;
 })();
