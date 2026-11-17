@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Enceladus Globe</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.123.0/Widgets/widgets.css">
@@ -38,6 +39,8 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #info p{margin:0 0 12px;color:#cfd6e0}
 #info a{color:var(--accent);text-decoration:none}#info a:hover{text-decoration:underline}
 #info .close{position:absolute;top:10px;right:10px}
+.zoombtn{background:var(--accent);color:#0b1220;border:0;border-radius:18px;padding:8px 16px;font:600 13px Inter,sans-serif;cursor:pointer}
+.zoombtn:hover{filter:brightness(1.1)}
 .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:rgba(126,226,255,.14);color:var(--stripe);margin-left:6px;vertical-align:middle}
 #layers{position:absolute;left:16px;bottom:44px;z-index:3;display:flex;gap:8px;align-items:flex-end}
 .layerbtn{width:76px;height:76px;border-radius:10px;border:2px solid #fff;overflow:hidden;position:relative;cursor:pointer;padding:0;background:#222;box-shadow:var(--shadow)}
@@ -230,6 +233,8 @@ cv.addEventListener('pointerdown', e => {
   const hit = !e.shiftKey && hitsGlobe(x, y);
   camera.cancelFlight();
   drag.mode = hit ? 'spin' : 'move'; drag.x = x; drag.y = y; drag.id = e.pointerId;
+  // A press is a click until the pointer travels a few pixels, so clicks never nudge the globe.
+  drag.x0 = x; drag.y0 = y; drag.armed = false; drag.slop = e.pointerType === 'mouse' ? 5 : 10;
   drag.velX = drag.velY = 0; drag.pendX = drag.pendY = 0;
   const dist = hit ? C.Cartesian3.distance(camera.positionWC, hit) : C.Cartesian3.magnitude(camera.positionWC) - R;
   drag.k = Math.max(dist, 200) / (R * focalPx());
@@ -238,11 +243,17 @@ cv.addEventListener('pointerdown', e => {
 cv.addEventListener('pointermove', e => {
   if (e.pointerId !== drag.id) return;
   const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (!drag.armed) {
+    if (Math.hypot(x - drag.x0, y - drag.y0) < drag.slop) return;
+    drag.armed = true; drag.x = drag.x0; drag.y = drag.y0;
+    cv.style.cursor = 'grabbing';
+  }
   drag.pendX += x - drag.x; drag.pendY += y - drag.y; drag.x = x; drag.y = y; drag.t = performance.now();
 });
 const endDrag = e => {
   if (e.pointerId !== drag.id) return;
-  drag.id = null;
+  drag.id = null; cv.style.cursor = '';
+  if (!drag.armed) { drag.mode = null; drag.velX = drag.velY = 0; return; }
   // Coast only if the pointer was still moving when released, and never faster than 25 px per frame.
   const v = Math.hypot(drag.velX, drag.velY), cap = 25;
   if (drag.mode === 'spin' && performance.now() - (drag.t || 0) < 90 && v > 0.3) {
@@ -309,7 +320,7 @@ feats.forEach(f => {
   const far = big ? 2.2e6 : Math.max(f.diameter_km * 1000 * 7, 250e3);
   f.entity = labelSrc.entities.add({
     position: C.Cartesian3.fromDegrees(f.lon, f.lat, 0, E),
-    point: { pixelSize: f.type === 'Crater' ? 5 : 6, color: C.Color.fromCssColorString(typeColor[f.type] || '#fff'), outlineColor: C.Color.BLACK, outlineWidth: 1.5, eyeOffset: new C.Cartesian3(0, 0, -3000), distanceDisplayCondition: new C.DistanceDisplayCondition(0, far) },
+    point: { pixelSize: f.type === 'Crater' ? 8 : 9, color: C.Color.fromCssColorString(typeColor[f.type] || '#fff'), outlineColor: C.Color.BLACK, outlineWidth: 1.5, eyeOffset: new C.Cartesian3(0, 0, -3000), distanceDisplayCondition: new C.DistanceDisplayCondition(0, far) },
     label: { text: f.name, font: (big ? '600 15px' : '500 13px') + ' Inter, sans-serif', fillColor: C.Color.fromCssColorString(STRIPES.has(f.name) ? '#7ee2ff' : '#f2f4f8'), outlineColor: C.Color.fromCssColorString('#000000cc'), outlineWidth: 3, style: C.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new C.Cartesian2(0, -14), eyeOffset: new C.Cartesian3(0, 0, -3000), distanceDisplayCondition: new C.DistanceDisplayCondition(0, far) },
     properties: { ref: f },
   });
@@ -318,7 +329,7 @@ jets.forEach(j => {
   j.kind = 'jet'; j.name = j.id.replace('Jet', 'Jet ');
   j.entity = jetSrc.entities.add({
     position: C.Cartesian3.fromDegrees(j.lon, j.lat, 0, E),
-    point: { pixelSize: 7, color: C.Color.fromCssColorString('#ffd36b').withAlpha(.95), outlineColor: C.Color.fromCssColorString('#ff7a00'), outlineWidth: 2, eyeOffset: new C.Cartesian3(0, 0, -3000), distanceDisplayCondition: new C.DistanceDisplayCondition(0, 1.6e6), scaleByDistance: new C.NearFarScalar(2e4, 1.5, 1.2e6, .35) },
+    point: { pixelSize: 9, color: C.Color.fromCssColorString('#ffd36b').withAlpha(.95), outlineColor: C.Color.fromCssColorString('#ff7a00'), outlineWidth: 2, eyeOffset: new C.Cartesian3(0, 0, -3000), distanceDisplayCondition: new C.DistanceDisplayCondition(0, 1.6e6), scaleByDistance: new C.NearFarScalar(2e4, 1.3, 1.2e6, .6) },
     properties: { ref: j },
   });
 });
@@ -386,10 +397,12 @@ function showInfo(o) {
       <p><b>Name origin:</b> ${esc(o.origin)}</p>
       <a href="${esc(o.link)}" target="_blank" rel="noopener">USGS Gazetteer entry ↗</a>`;
   }
+  h += `<div style="margin-top:14px"><button class="zoombtn" id="zoomhere">Zoom here</button></div>`;
   el.innerHTML = h; document.getElementById('info').classList.add('open');
+  document.getElementById('zoomhere').onclick = () => flyTo(o, false);
   state.sel = o.kind === 'feature' ? o.name : o.id; writeHash();
 }
-function closeInfo() { document.getElementById('info').classList.remove('open'); state.sel = null; writeHash(); }
+function closeInfo() { document.getElementById('info').classList.remove('open'); state.sel = null; markSelected(null); writeHash(); }
 document.getElementById('infoclose').onclick = closeInfo;
 
 function flyTo(o, now) {
@@ -398,20 +411,66 @@ function flyTo(o, now) {
   const hpr = new C.HeadingPitchRange(0, C.Math.toRadians(range > 250e3 ? -70 : -48), range);
   if (now) camera.lookAt(target, hpr), camera.lookAtTransform(C.Matrix4.IDENTITY);
   else camera.flyToBoundingSphere(new C.BoundingSphere(target, 1), { offset: hpr, duration: 2.2 });
-  showInfo(o);
+  markSelected(o); showInfo(o);
 }
 
 const handler = new C.ScreenSpaceEventHandler(scene.canvas);
+// Find the marker nearest the pointer within a generous box, so small dots are easy to hit.
+const HIT_PX = 26;
+function pickMarker(pos) {
+  let picks;
+  try { picks = scene.drillPick(pos, 12, HIT_PX, HIT_PX); } catch (_) { picks = [scene.pick(pos)].filter(Boolean); }
+  let best = null, bestD = Infinity;
+  for (const p of picks) {
+    const ent = p && p.id; if (!ent || !ent.properties || !ent.properties.ref) continue;
+    const o = ent.properties.ref.getValue();
+    let d = HIT_PX;  // outlines and other shapes rank behind any dot
+    const wp = ent.position && C.SceneTransforms.worldToWindowCoordinates(scene, ent.position.getValue(C.JulianDate.now()));
+    if (wp && ent.point) d = Math.hypot(wp.x - pos.x, wp.y - pos.y);
+    if (d < bestD) { bestD = d; best = o; }
+  }
+  return best;
+}
+let selected = null, hovered = null;
+const SEL_OUTLINE = C.Color.fromCssColorString('#8ab4f8');
+function refreshDot(o) {
+  // One place decides a dot's look: bigger when hovered, bigger and blue-ringed when selected.
+  const pt = o && o.entity && o.entity.point; if (!pt) return;
+  if (o._base === undefined) { o._base = pt.pixelSize.getValue(); o._ring = pt.outlineColor.getValue(); }
+  pt.pixelSize = o._base + (o === selected ? 5 : o === hovered ? 4 : 0);
+  pt.outlineColor = o === selected ? SEL_OUTLINE : o._ring;
+}
+function markSelected(o) { const old = selected; selected = o; refreshDot(old); refreshDot(o); }
 handler.setInputAction(e => {
-  const p = scene.pick(e.position);
-  if (p && p.id && p.id.properties) flyTo(p.id.properties.ref.getValue(), false);
+  const o = pickMarker(e.position);
+  if (o) { markSelected(o); showInfo(o); }   // just open the details; the view stays where it is
 }, C.ScreenSpaceEventType.LEFT_CLICK);
+
+// Double-click always zooms in toward the spot under the pointer, like a web map.
+viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(C.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+handler.setInputAction(e => {
+  const ray = camera.getPickRay(e.position); if (!ray) return;
+  const target = globe.pick(ray, scene) || camera.pickEllipsoid(e.position, E); if (!target) return;
+  const dist = C.Cartesian3.distance(camera.positionWC, target);
+  const step = Math.min(dist * 0.55, Math.max(dist - ssc.minimumZoomDistance, 0));
+  if (step <= 0) return;
+  // Moving straight along the pointer's ray keeps the clicked spot under the pointer.
+  const dest = C.Cartesian3.add(camera.positionWC, C.Cartesian3.multiplyByScalar(ray.direction, step, new C.Cartesian3()), new C.Cartesian3());
+  camera.cancelFlight(); drag.mode = null;
+  camera.flyTo({ destination: dest, orientation: { direction: C.Cartesian3.clone(camera.directionWC), up: C.Cartesian3.clone(camera.upWC) }, duration: 0.6, easingFunction: C.EasingFunction.QUADRATIC_OUT });
+}, C.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
 // ---------- cursor readout ----------
 const cursorEl = document.getElementById('cursor');
 let lastMove = 0;
+function setHover(o) {
+  if (o === hovered) return;
+  const old = hovered; hovered = o; refreshDot(old); refreshDot(o);
+  cv.style.cursor = o ? 'pointer' : '';
+}
 handler.setInputAction(e => {
   const t = performance.now(); if (drag.id !== null || t - lastMove < 60) return; lastMove = t;
+  setHover(pickMarker(e.endPosition));
   const ray = camera.getPickRay(e.endPosition); const p = ray && globe.pick(ray, scene);
   if (!p) { cursorEl.textContent = '—'; return; }
   const c = E.cartesianToCartographic(p); if (!c) return;
