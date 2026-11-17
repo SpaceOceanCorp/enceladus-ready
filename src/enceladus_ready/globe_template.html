@@ -83,13 +83,13 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #icepanel .cite{font-size:11.5px;color:var(--muted)}
 #icepanel .row{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;margin-top:8px}
 #icepanel input[type=range]{width:130px;accent-color:var(--accent)}
-#section{position:absolute;left:16px;right:72px;bottom:40px;z-index:6;padding:12px 16px 10px;display:none}
+#section{position:absolute;left:16px;bottom:40px;width:min(720px,calc(100vw - 104px));z-index:6;padding:12px 16px 10px;display:none}
 #section.open{display:block}
 #section .head{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
 #section .head b{font-size:14px}
 #section .head span{color:var(--muted);font-size:12.5px;flex:1}
 #section .head button.lnk{background:none;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:4px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
-#section svg{display:block;width:100%;height:230px}
+#section svg{display:block;width:100%;height:240px}
 #section .keys{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:4px}
 #section .keys i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 #sechint{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:6;padding:7px 8px 7px 14px;font-size:13px;display:none;white-space:nowrap;align-items:center;gap:10px}
@@ -106,7 +106,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
   #chips{top:72px}
   .chip{height:36px;padding:0 12px;font-size:13px}
   #icepanel{top:116px;max-height:45vh}
-  #section{right:16px;bottom:34px}
+  #section{width:auto;right:16px;bottom:34px}
   #section svg{height:180px}
 }
 </style>
@@ -739,7 +739,7 @@ const section = {
       width: 3, material: C.Color.fromCssColorString('#8ab4f8'), depthFailMaterial: C.Color.fromCssColorString('#8ab4f8').withAlpha(.45), arcType: C.ArcType.NONE } });
     $('section').classList.add('open');
     const svg = $('secsvg'), W = svg.clientWidth || 800, H = svg.clientHeight || 230;
-    const L = 46, Rm = 12, T = 10, B = 26, D = S[S.length - 1].d || 1;
+    const L = 46, Rm = 12, T = 28, B = 26, D = S[S.length - 1].d || 1;
     const top = Math.max(...S.map(s => s.surf)) + 4, bot = m.core_km - 14;
     const X = d => L + d / D * (W - L - Rm), Y = r => T + (top - r) / (top - bot) * (H - T - B);
     const pts = f => S.map(s => `${X(s.d).toFixed(1)},${Y(f(s)).toFixed(1)}`);
@@ -749,10 +749,15 @@ const section = {
     h += `<path d="${band(s => s.surf - s.ice, () => m.core_km)}" fill="#2a6fb5"/>`;
     h += `<path d="${band(s => s.surf, s => s.surf - s.ice)}" fill="#e8f1f8"/>`;
     h += `<path d="M${pts(s => s.surf).join('L')}" fill="none" stroke="#fff" stroke-width="1.2"/>`;
+    const mid = S[Math.floor(S.length / 2)], tag = (y, txt, col) => `<text x="${L + 8}" y="${y}" fill="${col}" font-size="11.5" font-weight="600">${txt}</text>`;
+    const iceTop = Y(S[0].surf), iceBot = Y(S[0].surf - S[0].ice), oceanBot = Y(m.core_km);
+    if (iceBot - iceTop > 16) h += tag((iceTop + iceBot) / 2 + 4, 'ICE', '#29435c');
+    if (oceanBot - iceBot > 16) h += tag((iceBot + oceanBot) / 2 + 4, 'OCEAN', '#d6e6f7');
+    if (Y(bot) - oceanBot > 14) h += tag((oceanBot + Y(bot)) / 2 + 4, 'ROCKY CORE', '#f1e3d3');
     for (let r = Math.ceil(bot / 10) * 10; r <= top; r += 10)
       h += `<line x1="${L}" x2="${W - Rm}" y1="${Y(r)}" y2="${Y(r)}" stroke="#ffffff22"/><text x="${L - 6}" y="${Y(r) + 4}" fill="#9aa4b2" font-size="11" text-anchor="end">${r}</text>`;
     h += `<text x="12" y="${(T + H - B) / 2}" fill="#9aa4b2" font-size="11" transform="rotate(-90 12 ${(T + H - B) / 2})" text-anchor="middle">km from centre</text>`;
-    const step = [25, 50, 100, 200, 250, 500].find(v => D / v <= 8) || 500;
+    const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500].find(v => D / v <= 8) || 500;
     for (let d = 0; d <= D + 1e-6; d += step) h += `<text x="${X(d)}" y="${H - 8}" fill="#9aa4b2" font-size="11" text-anchor="middle">${d} km</text>`;
     // Plume jet sources within 15 km of the line.
     (window.ENC_JETS || []).forEach(j => {
@@ -760,7 +765,7 @@ const section = {
       S.forEach(s => { const dd = Math.hypot(s.lat - j.lat, ((s.lon - j.lon + 540) % 360 - 180) * Math.cos(s.lat * Math.PI / 180)) * Math.PI / 180 * R / 1000; if (dd < best) { best = dd; bs = s; } });
       if (best < 15) h += `<path d="M${X(bs.d)},${Y(bs.surf) - 2}l-4,-8h8z" fill="#ff9a3c"/>`;
     });
-    h += `<line id="secguide" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="#fff8" stroke-dasharray="3 3" visibility="hidden"/><text id="secread" x="0" y="${T + 14}" fill="#fff" font-size="12" visibility="hidden"></text>`;
+    h += `<line id="secguide" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="#fff8" stroke-dasharray="3 3" visibility="hidden"/><text id="secread" x="${L}" y="16" fill="#e9edf3" font-size="12.5" font-weight="500" visibility="hidden"></text>`;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = h;
     const ices = S.map(s => s.ice), oceans = S.map(s => s.ocean);
     $('secinfo').textContent = `${D.toFixed(0)} km long · ice ${Math.min(...ices).toFixed(0)}–${Math.max(...ices).toFixed(0)} km · ocean ${Math.min(...oceans).toFixed(0)}–${Math.max(...oceans).toFixed(0)} km`;
@@ -772,8 +777,9 @@ const section = {
       const d = (x - L) / (W - L - Rm) * D, s = S.reduce((a, b) => Math.abs(b.d - d) < Math.abs(a.d - d) ? b : a);
       const g = svg.querySelector('#secguide'), t = svg.querySelector('#secread');
       g.setAttribute('x1', x); g.setAttribute('x2', x); g.setAttribute('visibility', 'visible');
-      t.textContent = `${s.d.toFixed(0)} km · ice ${s.ice.toFixed(1)} km · ocean ${s.ocean.toFixed(1)} km`;
-      t.setAttribute('x', Math.min(x + 8, W - 240)); t.setAttribute('visibility', 'visible');
+      t.textContent = `At ${s.d.toFixed(s.d < 10 ? 1 : 0)} km: ice ${s.ice.toFixed(1)} km thick, ocean ${s.ocean.toFixed(1)} km deep`;
+      t.setAttribute('text-anchor', x > (L + W) / 2 ? 'end' : 'start');
+      t.setAttribute('x', x > (L + W) / 2 ? x - 6 : x + 6); t.setAttribute('visibility', 'visible');
     };
     svg.onmouseleave = () => { svg.querySelector('#secguide').setAttribute('visibility', 'hidden'); svg.querySelector('#secread').setAttribute('visibility', 'hidden'); };
   },
