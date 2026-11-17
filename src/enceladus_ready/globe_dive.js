@@ -145,6 +145,17 @@ export function start(opts) {
     #dive .brand{position:absolute;left:50%;top:16px;transform:translateX(-50%);opacity:.92;pointer-events:none;background:rgba(8,20,32,.78);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:7px 14px}
     #dive .brand img{display:block;height:20px;width:auto}
     @media (max-width:1100px){ #dive .brand{top:auto;bottom:16px;left:auto;right:16px;transform:none} #dive .brand img{height:16px} }
+    #dive .map{position:absolute;right:16px;top:64px;padding:10px 12px 8px;user-select:none;-webkit-user-select:none}
+    #dive .map .head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+    #dive .map .head b{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#cfe3f5}
+    #dive .map .head button{padding:3px 9px;font-size:11.5px;border-radius:12px}
+    #dive .map .body{display:flex;gap:10px;align-items:stretch}
+    #dive .map canvas{width:190px;height:190px;cursor:crosshair;border-radius:50%}
+    #dive .map .gauge{position:relative;width:64px;height:190px}
+    #dive .map .gauge canvas{width:64px;height:190px;border-radius:6px;cursor:default}
+    #dive .map .cap{font-size:10.5px;color:#9aa4b2;margin-top:5px;max-width:270px}
+    @media (max-width:900px){ #dive .map canvas{width:130px;height:130px} #dive .map .gauge,#dive .map .gauge canvas{height:130px;width:52px} }
+    @media (max-width:640px){ #dive .map{display:none} }
     #dive .fade{position:absolute;inset:0;background:#02101c;pointer-events:none;transition:opacity 1.2s}
     @media (pointer:coarse){ #dive .ctl .keys{display:none} }
     @media (max-width:640px){ #dive .hud{width:auto;right:16px;top:64px;padding:10px 12px;font-size:12px} #dive .hud .over{display:none} #dive .note{display:none} #dive .ctl{left:16px;width:auto} }
@@ -168,6 +179,11 @@ export function start(opts) {
     <button data-a="exit" class="exit">Exit dive</button>
   </div>
   <div class="brand"><img src="spaceocean-wordmark-white.png" alt="Space Ocean Corp"></div>
+  <div class="card map">
+    <div class="head"><b>Map</b><button data-a="mapzoom">Zoom in</button></div>
+    <div class="body"><canvas data-k="mapc" title="Click to travel there"></canvas><div class="gauge"><canvas data-k="gaugec"></canvas></div></div>
+    <div class="cap">You are at the centre, arrow shows your heading, north is up. Orange: plume jet sources. Click the map to travel.</div>
+  </div>
   <div class="card tip" data-k="tip"></div>
   <div class="card ctl">
     <div class="row"><span class="t">Go to</span><button data-g="ice">Ice ceiling</button><button data-g="mid">Mid-ocean</button><button data-g="floor">Seafloor</button></div>
@@ -338,6 +354,108 @@ export function start(opts) {
       e.innerHTML = `${esc(c.l.name)}<small>${esc(c.l.sub)} · ${c.d.toFixed(1)} km</small>`;
     });
   }
+
+
+  // ---------- minimap: the moon centred on you, north up, plus a depth gauge ----------
+  const mapC = hud('mapc'), gaugeC = hud('gaugec');
+  const map = { zoom: 1, img: null, w: 0, h: 0, last: 0 };
+  (function loadMosaic() {
+    // Level-2 mosaic tiles (8 x 4 of 256 px) assembled into one equirectangular image.
+    const cw = 2048, ch = 1024, off = document.createElement('canvas'); off.width = cw; off.height = ch;
+    const ctx = off.getContext('2d'); let left = 32;
+    for (let x = 0; x < 8; x++) for (let y = 0; y < 4; y++) {
+      const im = new Image();
+      im.onload = () => { ctx.drawImage(im, x * 256, y * 256); if (--left === 0) { map.img = ctx.getImageData(0, 0, cw, ch).data; map.w = cw; map.h = ch; } };
+      im.onerror = () => { if (--left === 0 && !map.img) { map.img = ctx.getImageData(0, 0, cw, ch).data; map.w = cw; map.h = ch; } };
+      im.src = `tiles/mosaic/2/${x}/${y}.jpg`;
+    }
+  })();
+  function sizeCanvas(c) {
+    const r = c.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.round(r.width * d)), h = Math.max(1, Math.round(r.height * d));
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    return { w, h, d };
+  }
+  // Orthographic projection centred on (lat0, lon0); zoom 1 shows the whole hemisphere.
+  function project(lat, lon, lat0, lon0, R) {
+    const p = lat * D2R, l = (lon - lon0) * D2R, p0 = lat0 * D2R;
+    const cosc = Math.sin(p0) * Math.sin(p) + Math.cos(p0) * Math.cos(p) * Math.cos(l);
+    if (cosc < 0) return null;
+    return { x: R * Math.cos(p) * Math.sin(l), y: R * (Math.cos(p0) * Math.sin(p) - Math.sin(p0) * Math.cos(p) * Math.cos(l)) };
+  }
+  function unproject(nx, ny, lat0, lon0) {
+    const rho = Math.hypot(nx, ny); if (rho > 1) return null;
+    const c = Math.asin(rho), p0 = lat0 * D2R;
+    if (rho < 1e-9) return { lat: lat0, lon: lon0 };
+    const lat = Math.asin(Math.cos(c) * Math.sin(p0) + ny * Math.sin(c) * Math.cos(p0) / rho) / D2R;
+    const lon = lon0 + Math.atan2(nx * Math.sin(c), rho * Math.cos(c) * Math.cos(p0) - ny * Math.sin(c) * Math.sin(p0)) / D2R;
+    return { lat, lon: ((lon + 540) % 360) - 180 };
+  }
+  function drawMap(ll, up) {
+    const { w, h, d } = sizeCanvas(mapC), ctx = mapC.getContext('2d');
+    const cx = w / 2, cy = h / 2, R = (w / 2 - 2 * d) * map.zoom;
+    const img = ctx.createImageData(w, h), px = img.data;
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      const k = (j * w + i) * 4, dx = i - cx, dy = cy - j;
+      if (dx * dx + dy * dy > (w / 2) * (w / 2)) continue;              // round window
+      const nx = dx / R, ny = dy / R, rho2 = nx * nx + ny * ny;
+      if (rho2 > 1) { px[k] = 2; px[k + 1] = 8; px[k + 2] = 16; px[k + 3] = 255; continue; }
+      const q = unproject(nx, ny, ll.lat, ll.lon);
+      let v = 60;
+      if (map.img) {
+        const sx = Math.min(map.w - 1, Math.max(0, Math.floor((q.lon + 180) / 360 * map.w)));
+        const sy = Math.min(map.h - 1, Math.max(0, Math.floor((90 - q.lat) / 180 * map.h)));
+        v = map.img[(sy * map.w + sx) * 4];
+      }
+      const limb = 0.55 + 0.45 * Math.sqrt(1 - rho2);
+      px[k] = v * limb * 0.85; px[k + 1] = v * limb * 0.93; px[k + 2] = v * limb; px[k + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    // Plume jet sources.
+    ctx.fillStyle = '#ff9a3c';
+    jets.forEach(jt => { const q = project(jt.lat, jt.lon, ll.lat, ll.lon, R); if (q && Math.hypot(q.x, q.y) < w / 2 - 3 * d) { ctx.beginPath(); ctx.arc(cx + q.x, cy - q.y, 1.6 * d, 0, 7); ctx.fill(); } });
+    // Graticule hint: the equator and the poles if in view.
+    ctx.strokeStyle = 'rgba(138,180,248,.35)'; ctx.lineWidth = d; ctx.beginPath(); let pen = false;
+    for (let lo = -180; lo <= 180; lo += 3) { const q = project(0, lo, ll.lat, ll.lon, R); if (q && Math.hypot(q.x, q.y) < w / 2) { pen ? ctx.lineTo(cx + q.x, cy - q.y) : ctx.moveTo(cx + q.x, cy - q.y); pen = true; } else pen = false; }
+    ctx.stroke();
+    [[90, 'N'], [-90, 'S']].forEach(([la, t]) => { const q = project(la, 0, ll.lat, ll.lon, R); if (q && Math.hypot(q.x, q.y) < w / 2 - 8 * d) { ctx.fillStyle = 'rgba(207,227,245,.8)'; ctx.font = `${10 * d}px Inter,sans-serif`; ctx.textAlign = 'center'; ctx.fillText(t, cx + q.x, cy - q.y + 4 * d); } });
+    // You: a dot with a heading arrow (angle from local north).
+    const north = new THREE.Vector3(0, 0, 1).addScaledVector(up, -up.z);
+    const east = new THREE.Vector3().crossVectors(north.lengthSq() > 1e-6 ? north.normalize() : new THREE.Vector3(1, 0, 0), up);
+    let hd = Math.atan2(st.fwd.dot(east), st.fwd.dot(north.lengthSq() > 1e-6 ? north : new THREE.Vector3(1, 0, 0)));
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(hd);
+    ctx.fillStyle = '#8ab4f8'; ctx.strokeStyle = '#0b1220'; ctx.lineWidth = 1.5 * d;
+    ctx.beginPath(); ctx.moveTo(0, -11 * d); ctx.lineTo(6 * d, 6 * d); ctx.lineTo(0, 2.5 * d); ctx.lineTo(-6 * d, 6 * d); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    // Rim.
+    ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1.5 * d; ctx.beginPath(); ctx.arc(cx, cy, w / 2 - d, 0, 7); ctx.stroke();
+  }
+  function drawGauge(sKm, ceil, floor, r) {
+    const { w, h, d } = sizeCanvas(gaugeC), ctx = gaugeC.getContext('2d');
+    const ice = sKm - ceil, sea = sKm - floor, depth = sKm - r, total = sea + 12;
+    const Y = km => 6 * d + (h - 12 * d) * km / total, bx = 6 * d, bw = 16 * d;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#05070b'; ctx.fillRect(bx, Y(0), bw, Y(total) - Y(0));
+    ctx.fillStyle = '#e8f1f8'; ctx.fillRect(bx, Y(0), bw, Y(ice) - Y(0));
+    ctx.fillStyle = '#2a6fb5'; ctx.fillRect(bx, Y(ice), bw, Y(sea) - Y(ice));
+    ctx.fillStyle = '#8a6a4e'; ctx.fillRect(bx, Y(sea), bw, Y(total) - Y(sea));
+    ctx.font = `${9.5 * d}px Inter,sans-serif`; ctx.textAlign = 'left'; ctx.fillStyle = '#9aa4b2';
+    // Labels keep at least one line apart, so thin ice doesn't stack them on top of each other.
+    let ly = -1e9;
+    const lab = (km, t) => { const y = Math.min(h - 3 * d, Math.max(10 * d, Y(km) + 3.5 * d, ly + 11 * d)); ctx.fillText(t, bx + bw + 4 * d, y); ly = y; };
+    lab(0, 'surface'); lab(ice, 'ice base'); lab(sea, 'seafloor');
+    // You.
+    ctx.fillStyle = '#ffd36b'; ctx.strokeStyle = '#0b1220'; ctx.lineWidth = d;
+    ctx.beginPath(); ctx.moveTo(bx - 4 * d, Y(depth) - 4 * d); ctx.lineTo(bx + 2 * d, Y(depth)); ctx.lineTo(bx - 4 * d, Y(depth) + 4 * d); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillRect(bx, Y(depth) - 0.75 * d, bw, 1.5 * d);
+  }
+  mapC.addEventListener('click', e => {
+    const r = mapC.getBoundingClientRect(), Rcss = (r.width / 2 - 2) * map.zoom;
+    const nx = (e.clientX - r.left - r.width / 2) / Rcss, ny = (r.top + r.height / 2 - e.clientY) / Rcss;
+    const here = toLL(st.pos), q = unproject(nx, ny, here.lat, here.lon);
+    if (q) fade(() => placeAt(q.lat, q.lon));
+  });
+  root.querySelector('[data-a="mapzoom"]').onclick = e => { map.zoom = map.zoom === 1 ? 4 : 1; e.target.textContent = map.zoom === 1 ? 'Zoom in' : 'Whole moon'; map.last = 0; };
 
   // ---------- input ----------
   const onKey = (e, down) => {
@@ -510,6 +628,7 @@ export function start(opts) {
         : (st.vis !== 'sonar' && ceil - r > 4 && r - floor > 4) ? 'Too dark to see the ice or the seafloor from here. Try View: sonar, or Go to: Seafloor.' : '';
       tip.textContent = tipTxt; tip.classList.toggle('open', !!tipTxt);
       hud('speed').textContent = st.speed < 1 ? (st.speed * 1000).toFixed(0) + ' m/s' : st.speed.toFixed(1) + ' km/s';
+      if (now - map.last > 250) { map.last = now; drawMap(ll, up); drawGauge(s, ceil, floor, r); }
       let best = null, bd = 1e9;
       feats.forEach(f => { const d = toXYZ(f.lat, f.lon, 1).angleTo(up) * s; if (d < bd) { bd = d; best = f; } });
       hud('over').textContent = best ? (bd < Math.max(best.diameter_km / 2, 5) ? `Overhead: ${best.name} (${best.type})` : `Nearest named feature: ${best.name}, ${bd.toFixed(0)} km away`) : '';
