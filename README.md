@@ -13,6 +13,7 @@ The Cassini-derived products are excellent and free, but they are built for meas
 | South-polar Unreal kit | `out/unreal/south_polar_201km/` | Terrain, textures, vents and lighting tables for a 201.6 km tile centered on the south pole. |
 | High-resolution insets | `out/unreal/south_polar_201km/relief/insets/` | Optional Cassini imagery as fine as about 9 m per pixel over patches of the relief tile. |
 | Checks and previews | `out/validation.json`, `out/previews/` | Evidence that the export matches the source. |
+| Browser globe | `out/globe/` | A zoomable, tiltable 3D Enceladus in the browser: Cassini imagery, color topography, IAU feature names and the Porco et al. (2014) jet sources. |
 
 ## Run it
 
@@ -28,6 +29,26 @@ This downloads about 650 MB from USGS and takes under two minutes after that.
 After `pixi run all`, run `pixi run inset` to build the optional high-resolution insets. It downloads about 120 MB of calibrated Cassini frames and can take 30 minutes or more.
 
 Then run `pixi run viewer` and open `out/viewer/enceladus-viewer.html` in a browser for a zoomable view of the tile and insets. The images are built on your machine and are not stored in this repository.
+
+## Browser globe
+
+`pixi run globe` builds a self-contained 3D map of the whole moon in `out/globe/` (about 130 MB, a few minutes). It needs the cloud-optimized rasters from `pixi run all`. Then serve the folder and open it:
+
+```powershell
+pixi run python -m http.server 8765 --directory out/globe
+```
+
+Go to http://localhost:8765. The page uses CesiumJS from cdnjs, so it needs internet for the library only.
+
+* **Layers:** Cassini mosaic (levels 0-5, about 100 m per pixel at full zoom), color topography with hillshade from the DEM, or both blended.
+* **Terrain:** 65 x 65 height tiles to level 5 (about 390 m spacing, close to the DEM's true 400 m post spacing). Heights are the true radius (reference ellipsoid plus DEM) minus a 252.1 km display sphere, so the moon's triaxial shape is real. Exaggeration is adjustable from 0 to 20x.
+* **Names:** all 87 IAU features from the USGS Gazetteer (`data/nomenclature/`, downloaded from planetarynames.wr.usgs.gov). Click one for its size, elevation, name origin and Gazetteer link. The four tiger stripes are highlighted.
+* **High-resolution areas:** if `pixi run inset` has been run, the 25 m and 10 m Cassini insets over the tiger stripes become zoom levels 6-8 (down to about 12 m per pixel). Their fine detail is multiplied onto the global mosaic, so brightness matches. Patches where a Cassini frame shows readout striping are faded out automatically. Each area has a clickable outline with its resolution, size and flyby dates. `pixi run python -m enceladus_ready.globe_hires` rebuilds just this layer.
+* **Jets:** the 100 Porco et al. (2014) jet sources as points. No jet directions are drawn, for the reason under Vents above.
+* **Moving around:** drag on the moon to turn it freely in any direction, over the poles and around, with easing and a short coast after release. Drag empty space (or Shift+drag) to move the whole globe around the screen; it always stays fully on screen. Wheel or right-drag zooms, Ctrl+drag or middle-drag tilts, and the compass and Home buttons re-centre.
+* **Readouts:** cursor latitude, longitude and height relative to the reference ellipsoid, a scale bar, and a shareable URL (`#@lat,lon,altitude,heading,tilt/l=layer/x=exaggeration/f=feature`).
+
+The cursor height comes from the exaggerated terrain mesh divided by the exaggeration, so it carries the level-5 tile resolution, not the full DEM.
 
 ## Hosted files
 
