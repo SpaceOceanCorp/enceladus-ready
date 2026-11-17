@@ -218,6 +218,11 @@ def build_hires():
     globe_hires.build()
 
 
+def build_interior():
+    from . import globe_interior  # imported here: it imports this module
+    globe_interior.build()
+
+
 def build_all():
     build_page()
     build_features()
@@ -225,6 +230,7 @@ def build_all():
     build_relief()
     build_mosaic()
     build_hires()
+    build_interior()
 
 
 if __name__ == "__main__":
@@ -232,4 +238,4 @@ if __name__ == "__main__":
     steps = sys.argv[1:] or ["all"]
     for s in steps:
         {"all": build_all, "features": build_features, "terrain": build_terrain,
-         "relief": build_relief, "mosaic": build_mosaic, "page": build_page, "hires": build_hires}[s]()
+         "relief": build_relief, "mosaic": build_mosaic, "page": build_page, "hires": build_hires, "interior": build_interior}[s]()
