@@ -12,7 +12,7 @@
 :root{
   --bg:#000;--panel:rgba(22,24,30,.92);--panel-solid:#16181e;--line:rgba(255,255,255,.12);
   --text:#e9edf3;--muted:#9aa4b2;--accent:#8ab4f8;--stripe:#7ee2ff;--jet:#ffd36b;
-  --shadow:0 2px 10px rgba(0,0,0,.5);
+  --shadow:0 2px 10px rgba(0,0,0,.5);--z:1;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.4 Inter,system-ui,sans-serif;overflow:hidden}
@@ -30,7 +30,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #results button{display:flex;width:100%;gap:10px;align-items:baseline;padding:8px 14px;background:none;border:0;color:var(--text);font:inherit;text-align:left;cursor:pointer}
 #results button:hover,#results button.sel{background:rgba(138,180,248,.12)}
 #results small{color:var(--muted)}
-#info{position:absolute;top:76px;left:16px;width:380px;max-width:calc(100vw - 32px);max-height:calc(100vh - 160px);overflow:auto;padding:18px;display:none;z-index:4}
+#info{position:absolute;top:76px;left:16px;width:380px;max-width:calc(100vw - 32px);max-height:calc(100vh / var(--z) - 160px);overflow:auto;padding:18px;display:none;z-index:4}
 #info.open{display:block}
 #info h2{margin:0 0 2px;font-size:22px;font-weight:600}
 #info .type{color:var(--muted);margin-bottom:14px}
@@ -78,7 +78,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 .chip:hover{background:#262a33}
 .chip.on{background:var(--accent);color:#0b1220;border-color:var(--accent)}
 .chip svg{flex:none}
-#icepanel,#insidepanel{position:absolute;top:66px;right:16px;width:320px;max-width:calc(100vw - 32px);max-height:max(220px,calc(100vh - 360px));overflow:auto;padding:14px 16px;z-index:4}
+#icepanel,#insidepanel{position:absolute;top:66px;right:16px;width:320px;max-width:calc(100vw - 32px);max-height:max(220px,calc(100vh / var(--z) - 360px));overflow:auto;padding:14px 16px;z-index:4}
 #insidepanel h3,#icepanel h3{margin:0 0 8px;font-size:15px;font-weight:600}
 .seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .seg button{flex:1 1 45%;padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text);font:500 12px Inter,sans-serif;cursor:pointer;text-align:left;line-height:1.25}
@@ -129,21 +129,95 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #insideTemp .tp{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:4px;font-variant-numeric:tabular-nums}
 #insideTemp .tp span:nth-child(odd){color:var(--muted)}
 #loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);z-index:10;pointer-events:none;transition:opacity .6s}
-@media (max-width:640px){
-  #search{width:auto;right:16px}
-  #info{top:auto;bottom:150px;left:16px;right:16px;width:auto;max-height:40vh}
-  .layerbtn{width:60px;height:60px}
-  #layers{flex-wrap:wrap;right:72px}
-  #opts{min-width:0;width:100%;order:-1;padding:8px 12px}
-  #credit{display:none}
-  #brand{bottom:auto;top:122px}
-  #brand img{height:16px}
-  #chips{top:72px;max-width:none;left:16px}
-  .chip{height:36px;padding:0 12px;font-size:13px}
-  #icepanel,#insidepanel{top:116px;max-height:45vh}
-  #section{width:auto;right:16px;bottom:34px}
-  #section svg{height:180px}
+/* ---------- every screen size ---------- */
+#optsBtn{display:none;background:var(--panel-solid);color:var(--text)}
+#optsBtn svg{display:block;margin:10px auto 0}
+body.walking #layers,body.walking #ctrls{display:none}
+#walkhud .pad,#walkhud .row button{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#walkhud .pad button{font-size:16px}
+#walkhud .help.touch{display:none}
+@media (pointer:coarse){
+  #walkhud .help.keys{display:none}#walkhud .help.touch{display:block}
+  #cursor{display:none}
+  .chip,#ctrls button,.iconbtn{touch-action:manipulation}
 }
+/* tablets and narrow windows: the chips get their own scrolling row under the search box, the logo moves into the status strip */
+@media (max-width:1100px){
+  #chips{top:72px;left:16px;right:16px;max-width:none;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:0 0 2px}
+  #chips::-webkit-scrollbar{display:none}
+  .chip{flex:none}
+  #info{top:124px;max-height:calc(100vh / var(--z) - 210px)}
+  #icepanel,#insidepanel{top:124px;max-height:max(220px,calc(100vh / var(--z) - 420px))}
+  #sechint,#divehint,#landhint{top:124px}
+  #brand{left:12px;bottom:6px;transform:none;opacity:.95;z-index:4}
+  #brand img{height:15px;filter:none}
+  #credit{padding-left:130px}
+}
+/* phones: panels become bottom sheets, the map options fold behind an Options button */
+@media (max-width:640px){
+  #search{top:12px;left:12px;right:12px;width:auto;max-width:none}
+  #search .bar{height:44px}
+  #chips{top:64px;left:12px;right:12px;gap:6px}
+  .chip{height:36px;padding:0 12px;font-size:13px}
+  #credit{display:none}
+  #status{gap:12px;padding:0 10px}
+  #info,#icepanel,#insidepanel,#section,#walkhud{top:auto;left:8px;right:8px;bottom:34px;width:auto;max-width:none;max-height:min(55vh,calc(100vh - 170px));overflow:auto;z-index:7;border-radius:14px}
+  #info{padding:16px 14px}
+  #info h2{font-size:19px;padding-right:30px}
+  #section{padding:10px 12px}
+  #section .head span{flex-basis:100%;order:5;font-size:12px}
+  #section svg{height:150px}
+  #section .keys{gap:8px 12px;font-size:11px}
+  #sechint,#divehint,#landhint{top:110px;left:12px;right:12px;margin:0 auto;transform:none;width:fit-content;max-width:none;white-space:normal;font-size:13px;padding:8px 10px;gap:8px}
+  #sechint span,#divehint #divehintText,#landhint>span{flex-basis:100%;text-align:center}
+  #layers{left:12px;bottom:36px;gap:6px}
+  .layerbtn{width:52px;height:52px}
+  .layerbtn span{font-size:10px}
+  #ctrls{right:12px;bottom:36px;gap:6px}
+  #walkhud h3{font-size:14px;margin-bottom:4px}
+  #walkhud dl{font-size:12px;margin-bottom:4px}
+  #walkhud .row button{padding:7px 11px}
+  #walkhud .pad{grid-template-columns:repeat(3,56px);gap:6px}
+  #walkhud .pad button{padding:12px 0}
+}
+@media (max-width:640px),(max-height:520px){
+  #optsBtn{display:block}
+  #opts{display:none;position:absolute;left:0;bottom:calc(100% + 8px);width:min(300px,calc(100vw - 88px));min-width:0;padding:10px 12px;z-index:5}
+  #opts.open{display:block}
+}
+/* short screens (a phone on its side): chips beside the search box, everything slimmer */
+@media (max-height:520px){
+  #search{top:8px}
+  #search .bar{height:40px}
+  #results{max-height:calc(100vh - 70px)}
+  #info{top:56px;max-height:calc(100vh - 100px)}
+  #icepanel,#insidepanel{top:56px;right:64px;max-height:calc(100vh - 100px)}
+  #sechint,#divehint,#landhint{top:56px}
+  #section{bottom:32px;max-height:calc(100vh - 44px);overflow:auto}
+  #section svg{height:110px}
+  #layers{bottom:34px}
+  .layerbtn{width:46px;height:46px}
+  .layerbtn span{font-size:9.5px;padding:2px 0}
+  #ctrls{bottom:34px;gap:5px}
+  #ctrls button{width:36px;height:36px;font-size:17px}
+  #walkhud{bottom:32px;max-height:calc(100vh - 44px);overflow:auto;padding:8px 12px;width:auto;max-width:calc(100vw - 24px)}
+  #walkhud dl,#walkhud .help,#walkhud h3{display:none}
+  #walkhud .body{display:flex;gap:12px;align-items:center}
+  #walkhud .row{max-width:300px}
+}
+@media (max-height:520px) and (min-width:641px){
+  #search{width:340px}
+  #chips{top:8px;left:368px;right:12px}
+}
+@media (max-height:520px) and (max-width:640px){
+  #chips{top:58px}
+}
+/* big monitors: scale the controls up so they stay comfortable to read */
+@media (min-width:1800px) and (min-height:1000px){
+  :root{--z:1.15}
+  #search,#info,#chips,#layers,#ctrls,#icepanel,#insidepanel,#section,#sechint,#divehint,#landhint,#walkhud,#status,#brand{zoom:var(--z)}
+}
+@media (min-width:2500px) and (min-height:1350px){ :root{--z:1.4} }
 </style>
 </head>
 <body>
@@ -216,6 +290,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
   <button class="layerbtn active" data-layer="mosaic"><img src="tiles/mosaic/0/1/0.jpg" alt=""><span>Imagery</span></button>
   <button class="layerbtn" data-layer="relief"><img src="tiles/relief/0/1/0.jpg" alt=""><span>Topography</span></button>
   <button class="layerbtn" data-layer="hybrid"><img src="tiles/mosaic/0/0/0.jpg" alt=""><span>Hybrid</span></button>
+  <button class="layerbtn" id="optsBtn" aria-expanded="false" aria-controls="opts"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Options</span></button>
   <div class="card" id="opts">
     <label><input type="checkbox" id="optLabels" checked> Feature names</label>
     <label><input type="checkbox" id="optJets" checked> Plume jet sources (100)</label>
@@ -238,9 +313,12 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 <div class="card hide" id="walkhud">
   <h3>On the surface of Enceladus</h3>
   <dl><dt>Position</dt><dd id="walkpos"></dd><dt>Ground</dt><dd id="walkelev"></dd><dt>You are</dt><dd id="walkhop"></dd><dt>Sky</dt><dd id="walksat"></dd></dl>
-  <div class="row"><button data-mode="walk" class="go">Walk</button><button data-mode="rover">Rover</button><button data-mode="skim">Skim</button><button id="walkJump">Jump</button><button id="walkSat">Look at Saturn</button><button id="walkExit">Back to orbit</button></div>
-  <div class="pad"><span></span><button data-k="w" aria-label="Forward">▲</button><span></span><button data-k="arrowleft" aria-label="Turn left">⟲</button><button data-k="s" aria-label="Back">▼</button><button data-k="arrowright" aria-label="Turn right">⟳</button></div>
-  <p class="help">W/S or ↑/↓ move · A/D step sideways · ←/→ or drag to look · Shift go faster · Space jump (gravity is 1/87 of Earth's) · Esc leave</p>
+  <div class="body">
+    <div class="row"><button data-mode="walk" class="go">Walk</button><button data-mode="rover">Rover</button><button data-mode="skim">Skim</button><button id="walkFast" aria-pressed="false">Fast</button><button id="walkJump">Jump</button><button id="walkSat">Look at Saturn</button><button id="walkExit">Back to orbit</button></div>
+    <div class="pad"><button data-k="arrowleft" aria-label="Turn left">⟲</button><button data-k="w" aria-label="Forward">▲</button><button data-k="arrowright" aria-label="Turn right">⟳</button><button data-k="a" aria-label="Step left">◀</button><button data-k="s" aria-label="Back">▼</button><button data-k="d" aria-label="Step right">▶</button></div>
+  </div>
+  <p class="help keys">W/S or ↑/↓ move · A/D step sideways · ←/→ or drag to look · Shift go faster · Space jump (gravity is 1/87 of Earth's) · Esc leave</p>
+  <p class="help touch">Drag the view to look around. Hold the arrows to move. Gravity is 1/87 of Earth's, so jumps last a long time.</p>
 </div>
 <div id="status">
   <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · Saturn: Solar System Scope (CC BY 4.0) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
@@ -435,7 +513,7 @@ grid.show = false;
 function setLayer(name) {
   mosaic.show = name !== 'relief'; relief.show = name !== 'mosaic';
   if (hires) hires.show = mosaic.show && document.getElementById('optHires').checked; relief.alpha = name === 'hybrid' ? 0.45 : 1;
-  document.querySelectorAll('.layerbtn').forEach(b => b.classList.toggle('active', b.dataset.layer === name));
+  document.querySelectorAll('.layerbtn[data-layer]').forEach(b => b.classList.toggle('active', b.dataset.layer === name));
   state.layer = name; writeHash();
 }
 
@@ -644,7 +722,11 @@ function pick(o) { q.value = o.name; res.classList.remove('open'); flyTo(o, fals
 document.getElementById('clearq').onclick = () => { q.value = ''; render(); closeInfo(); };
 
 // ---------- options ----------
-document.querySelectorAll('.layerbtn').forEach(b => b.onclick = () => setLayer(b.dataset.layer));
+document.querySelectorAll('.layerbtn[data-layer]').forEach(b => b.onclick = () => setLayer(b.dataset.layer));
+// small screens: the map options fold away behind the Options button; tapping the moon closes them again
+const optsEl = document.getElementById('opts'), optsBtn = document.getElementById('optsBtn');
+optsBtn.onclick = e => { e.stopPropagation(); const o = optsEl.classList.toggle('open'); optsBtn.classList.toggle('active', o); optsBtn.setAttribute('aria-expanded', o); };
+cv.addEventListener('pointerdown', () => { if (optsEl.classList.contains('open')) { optsEl.classList.remove('open'); optsBtn.classList.remove('active'); optsBtn.setAttribute('aria-expanded', false); } });
 document.getElementById('optLabels').onchange = e => { labelSrc.show = e.target.checked; };
 document.getElementById('optJets').onchange = e => { jetSrc.show = e.target.checked; };
 document.getElementById('optHires').onchange = e => { areaSrc.show = e.target.checked; if (hires) hires.show = e.target.checked && mosaic.show; };

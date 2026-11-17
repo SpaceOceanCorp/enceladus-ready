@@ -158,11 +158,45 @@ export function start(opts) {
     @media (max-width:640px){ #dive .map{display:none} }
     #dive .fade{position:absolute;inset:0;background:#02101c;pointer-events:none;transition:opacity 1.2s}
     @media (pointer:coarse){ #dive .ctl .keys{display:none} }
-    @media (max-width:640px){ #dive .hud{width:auto;right:16px;top:64px;padding:10px 12px;font-size:12px} #dive .hud .over{display:none} #dive .note{display:none} #dive .ctl{left:16px;width:auto} }
+    #dive .ctl .brand2{display:none;margin-top:8px;text-align:right;opacity:.9}
+    #dive .ctl .brand2 img{height:14px;width:auto;display:inline-block}
+    #dive .hud h2 .tog{display:none;float:right;color:#9aa4b2;font-weight:400;font-size:12px}
+    #dive .hud.min dl>:nth-child(-n+2),#dive .hud.min dl>:nth-child(n+5):nth-child(-n+8),#dive .hud.min dl>:nth-child(n+13),#dive .hud.min .over{display:none}
+    #dive .ctl,#dive .top button{touch-action:manipulation}
+    @media (max-width:1100px){ #dive .brand{display:none} #dive .ctl .brand2{display:block} #dive .hud{top:62px} #dive .note{max-width:calc(100vw - 394px)} }
+    @media (max-width:640px),(max-height:520px){ #dive .hud h2{cursor:pointer} #dive .hud h2 .tog{display:inline} }
+    @media (max-width:640px){
+      #dive .top{top:10px;left:10px;right:10px;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;scrollbar-width:none}
+      #dive .top::-webkit-scrollbar{display:none}
+      #dive .top button{flex:none;padding:7px 11px;font-size:12.5px}
+      #dive .top .exit{order:-1}
+      #dive .hud{width:auto;left:10px;right:10px;top:54px;padding:9px 12px;font-size:12px}
+      #dive .hud h2{font-size:14px;margin-bottom:4px}
+      #dive .hud dl{font-size:12px;gap:2px 10px}
+      #dive .note{display:none}
+      #dive .ctl{left:10px;right:10px;bottom:10px;width:auto;padding:10px 12px}
+      #dive .ctl .g3 button{height:46px}
+      #dive .tip{top:38%;left:10px;right:10px;transform:none;text-align:center}
+    }
+    @media (max-height:520px){
+      #dive .map,#dive .note{display:none}
+      #dive .top{top:8px;right:8px}
+      #dive .top button{padding:6px 10px;font-size:12px}
+      #dive .hud{top:8px;left:8px;width:290px;padding:8px 10px}
+      #dive .hud h2{font-size:13px;margin-bottom:2px}
+      #dive .hud dl{font-size:11.5px;gap:1px 10px}
+      #dive .ctl{right:8px;bottom:8px;left:auto;width:340px;padding:8px 10px;max-height:calc(100vh - 56px);overflow:auto}
+      #dive .ctl .pads{margin:4px 0;gap:10px}
+      #dive .ctl .g3 button{height:36px}
+      #dive .ctl .row{margin:2px 0}
+      #dive .tip{top:52px}
+    }
+    @media (min-width:1800px) and (min-height:1000px){ #dive .hud,#dive .top,#dive .ctl,#dive .map,#dive .note,#dive .brand,#dive .tip{zoom:1.15} }
+    @media (min-width:2500px) and (min-height:1350px){ #dive .hud,#dive .top,#dive .ctl,#dive .map,#dive .note,#dive .brand,#dive .tip{zoom:1.4} }
   </style>
   <canvas></canvas>
   <div class="labels"></div>
-  <div class="card hud"><h2 data-k="title">Diving in the ocean of Enceladus</h2>
+  <div class="card hud"><h2><span data-k="title">Diving in the ocean of Enceladus</span><span class="tog" aria-hidden="true">details</span></h2>
     <dl><dt>Position</dt><dd data-k="pos">—</dd>
     <dt>Below the surface</dt><dd data-k="depth">—</dd>
     <dt>Ice above you</dt><dd data-k="ice">—</dd>
@@ -198,11 +232,16 @@ export function start(opts) {
       </div></div>
     </div>
     <div class="row"><span class="t">Speed</span><button data-s="-">−</button><span data-k="speed2" style="min-width:64px;text-align:center;font-variant-numeric:tabular-nums"></span><button data-s="+">+</button><button data-a="level" style="margin-left:auto">Level out</button></div>
+    <div class="brand2"><img src="spaceocean-wordmark-white.png" alt="Space Ocean Corp"></div>
     <div class="keys"><b>Drag</b> to look · <b>W/S</b> forward/back · <b>A/D</b> turn · <b>↑/↓</b> nose up/down · <b>Q/E</b> roll · <b>Space/R</b> rise · <b>Shift/F</b> dive · <b>Z/C</b> slide · <b>L</b> level · <b>+/−</b> speed · <b>Esc</b> exit</div>
   </div>
   <div class="card note">The ice ceiling's shape comes from the selected model (${esc(model.name)}). The fractures follow the mapped jet sources. Small-scale texture and the hydrothermal vents are illustrative: no one has seen the seafloor. Under kilometres of ice it would be completely dark, so the lights are yours.</div>
   <div class="fade"></div>`;
   document.body.appendChild(root);
+  // small screens: the readout shows depth, seafloor and temperature; tap its title for the rest
+  { const h = root.querySelector('.hud'), t = h.querySelector('.tog'), small = matchMedia('(max-width:640px),(max-height:520px)');
+    const set = m => { h.classList.toggle('min', m); t.textContent = m ? 'more ▾' : 'less ▴'; };
+    set(small.matches); h.querySelector('h2').onclick = () => { if (small.matches) set(!h.classList.contains('min')); }; }
   const $ = sel => root.querySelector(sel);
   const hud = k => root.querySelector(`[data-k="${k}"]`);
   const canvas = $('canvas'), labelsEl = $('.labels');
@@ -392,6 +431,7 @@ export function start(opts) {
     return { lat, lon: ((lon + 540) % 360) - 180 };
   }
   function drawMap(ll, up) {
+    if (mapC.offsetWidth < 20) return;   // the map is hidden on small screens
     const { w, h, d } = sizeCanvas(mapC), ctx = mapC.getContext('2d');
     const cx = w / 2, cy = h / 2, R = (w / 2 - 2 * d) * map.zoom;
     const img = ctx.createImageData(w, h), px = img.data;
@@ -628,7 +668,7 @@ export function start(opts) {
         : (st.vis !== 'sonar' && ceil - r > 4 && r - floor > 4) ? 'Too dark to see the ice or the seafloor from here. Try View: sonar, or Go to: Seafloor.' : '';
       tip.textContent = tipTxt; tip.classList.toggle('open', !!tipTxt);
       hud('speed').textContent = st.speed < 1 ? (st.speed * 1000).toFixed(0) + ' m/s' : st.speed.toFixed(1) + ' km/s';
-      if (now - map.last > 250) { map.last = now; drawMap(ll, up); drawGauge(s, ceil, floor, r); }
+      if (now - map.last > 250) { map.last = now; if (mapC.offsetWidth >= 20) { drawMap(ll, up); drawGauge(s, ceil, floor, r); } }
       let best = null, bd = 1e9;
       feats.forEach(f => { const d = toXYZ(f.lat, f.lon, 1).angleTo(up) * s; if (d < bd) { bd = d; best = f; } });
       hud('over').textContent = best ? (bd < Math.max(best.diameter_km / 2, 5) ? `Overhead: ${best.name} (${best.type})` : `Nearest named feature: ${best.name}, ${bd.toFixed(0)} km away`) : '';

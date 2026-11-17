@@ -5,7 +5,7 @@
 const G_ENC = 0.113, SATURN_D = 238042e3, SATURN_R = 58232e3;
 const walk = {
   on: false, picking: false, landing: 0, lat: 0, lon: 0, head: 0, pitch: 0.08, z: 0, vz: 0, ground: null,
-  mode: 'walk', keys: new Set(), last: 0, savedEx: null, look: null,
+  mode: 'walk', keys: new Set(), last: 0, savedEx: null, look: null, fast: false,
   SPEED: { walk: 3, rover: 25, skim: 400 }, EYE: { walk: 1.7, rover: 2.6, skim: 60 },
   begin() { this.picking = true; $('landhint').classList.add('open'); $('chipLand').classList.add('on'); },
   cancel() { this.picking = false; $('landhint').classList.remove('open'); if (!this.on) $('chipLand').classList.remove('on'); },
@@ -21,7 +21,7 @@ const walk = {
     this.on = true; ssc.enableInputs = false;
     if (this.saturnUp()) this.faceSaturn(); else { this.head = 0; this.pitch = 0.05; }
     this.landing = performance.now();
-    sky(true); $('walkhud').classList.remove('hide'); $('chipLand').classList.add('on'); this.hud();
+    sky(true); document.body.classList.add('walking'); $('walkhud').classList.remove('hide'); $('chipLand').classList.add('on'); this.hud();
   },
   // sine of Saturn's height above the local horizon (Saturn sits over latitude 0, longitude 0)
   saturnDir() { return Math.cos(this.lat) * Math.cos(this.lon); },
@@ -34,7 +34,7 @@ const walk = {
     if (!this.on) return;
     this.on = false; ssc.enableInputs = true; this.keys.clear(); this.look = null;
     scene.verticalExaggeration = this.savedEx || 4; exag.disabled = false; $('exagv').textContent = exag.value + '×'; updateHeights();
-    sky(false); $('walkhud').classList.add('hide'); $('chipLand').classList.remove('on');
+    sky(false); document.body.classList.remove('walking'); $('walkhud').classList.add('hide'); $('chipLand').classList.remove('on');
     camera.setView({ destination: C.Cartesian3.fromRadians(this.lon, this.lat, 300e3, E), orientation: { heading: 0, pitch: -Math.PI / 2, roll: 0 } });
   },
   frame(now) {
@@ -46,7 +46,7 @@ const walk = {
     this.head += t * 1.1 * dt;
     const g = globe.getHeight(C.Cartographic.fromRadians(this.lon, this.lat));
     if (g !== undefined) this.ground = this.ground === null ? g : this.ground + (g - this.ground) * Math.min(1, dt * 8);
-    const ground = this.ground === null ? 0 : this.ground, Rl = R + ground, d = this.SPEED[m] * (k.has('shift') ? 4 : 1) * dt;
+    const ground = this.ground === null ? 0 : this.ground, Rl = R + ground, d = this.SPEED[m] * (k.has('shift') || this.fast ? 4 : 1) * dt;
     if (f || s) {
       const dn = d * (f * Math.cos(this.head) - s * Math.sin(this.head)), de = d * (f * Math.sin(this.head) + s * Math.cos(this.head));
       this.lat = Math.max(-1.5706, Math.min(1.5706, this.lat + dn / Rl));
@@ -69,6 +69,7 @@ const walk = {
     $('walkhop').textContent = this.mode === 'skim' ? `skimming ${this.EYE.skim} m up` : this.z > 0.5 ? `${this.z.toFixed(1)} m up, ${this.vz >= 0 ? 'rising' : 'falling'} at ${Math.abs(this.vz).toFixed(2)} m/s` : 'standing on the ice';
     $('walksat').textContent = this.saturnUp() ? 'Saturn is in your sky' : 'Saturn is below the horizon (this is the far side)';
     document.querySelectorAll('#walkhud [data-mode]').forEach(b => b.classList.toggle('go', b.dataset.mode === this.mode));
+    $('walkFast').classList.toggle('go', this.fast); $('walkFast').setAttribute('aria-pressed', this.fast);
   },
   jump() { if (this.on && this.mode !== 'skim' && this.z === 0) { this.vz = this.mode === 'rover' ? 1.2 : 2; this.z = 0.001; } },
 };
@@ -116,13 +117,14 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => walk.keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => walk.keys.clear());
 // drag to look around
-cv.addEventListener('pointerdown', e => { if (!walk.on) return; walk.look = { x: e.clientX, y: e.clientY }; try { cv.setPointerCapture(e.pointerId); } catch (_) {} });
+// one finger (or the mouse) looks around; a second finger is ignored so the view doesn't jump
+cv.addEventListener('pointerdown', e => { if (!walk.on || walk.look) return; walk.look = { x: e.clientX, y: e.clientY, id: e.pointerId }; try { cv.setPointerCapture(e.pointerId); } catch (_) {} });
 cv.addEventListener('pointermove', e => {
-  if (!walk.on || !walk.look) return;
-  const dx = e.clientX - walk.look.x, dy = e.clientY - walk.look.y; walk.look = { x: e.clientX, y: e.clientY };
+  if (!walk.on || !walk.look || e.pointerId !== walk.look.id) return;
+  const dx = e.clientX - walk.look.x, dy = e.clientY - walk.look.y; walk.look.x = e.clientX; walk.look.y = e.clientY;
   walk.head += dx * 0.004; walk.pitch = Math.max(-1.4, Math.min(1.4, walk.pitch - dy * 0.004));
 });
-const endLook = () => { walk.look = null; };
+const endLook = e => { if (walk.look && e.pointerId === walk.look.id) walk.look = null; };
 cv.addEventListener('pointerup', endLook); cv.addEventListener('pointercancel', endLook);
 // controls
 $('chipLand').onclick = () => (walk.on ? walk.exit() : walk.picking ? walk.cancel() : walk.begin());
@@ -132,9 +134,10 @@ $('landSaturn').onclick = () => walk.land(5, 0);          // Saturn almost strai
 $('walkExit').onclick = () => walk.exit();
 $('walkJump').onclick = () => walk.jump();
 $('walkSat').onclick = () => walk.faceSaturn();
+$('walkFast').onclick = () => { walk.fast = !walk.fast; walk.hud(); };
 document.querySelectorAll('#walkhud [data-mode]').forEach(b => { b.onclick = () => { walk.mode = b.dataset.mode; walk.hud(); }; });
 document.querySelectorAll('#walkhud [data-k]').forEach(b => {
   const k = b.dataset.k, on = e => { e.preventDefault(); walk.keys.add(k); }, off = () => walk.keys.delete(k);
-  b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
+  b.addEventListener('contextmenu', e => e.preventDefault()); b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
 });
 
