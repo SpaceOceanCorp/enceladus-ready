@@ -64,6 +64,9 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #scale i{display:block;height:6px;border:1px solid var(--muted);border-top:0}
 #credit{margin-right:auto;overflow:hidden;text-overflow:ellipsis}
 .hide{display:none!important}
+#brand{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);z-index:2;display:block;opacity:.85;transition:opacity .2s}
+#brand:hover{opacity:1}
+#brand img{display:block;height:22px;width:auto;filter:drop-shadow(0 1px 3px rgba(0,0,0,.8))}
 #chips{position:absolute;top:16px;right:16px;z-index:5;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 430px)}
 #insidepanel input[type=range]{width:100%;accent-color:var(--accent)}
 #insidepanel p{margin:8px 0;font-size:13px;color:#cfd6e0}
@@ -101,12 +104,14 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #sechint{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:6;padding:7px 8px 7px 14px;font-size:13px;display:none;white-space:nowrap;align-items:center;gap:10px}
 #sechint button{background:none;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:4px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
 #sechint.open{display:flex}
-#divehint{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:6;padding:7px 8px 7px 14px;font-size:13px;display:none;white-space:nowrap;align-items:center;gap:10px}
+#divehint{position:absolute;left:16px;right:16px;margin:0 auto;width:fit-content;top:70px;z-index:6;padding:8px 8px 8px 16px;font-size:14px;display:none;white-space:nowrap;align-items:center;gap:10px;background:rgba(16,18,24,.96);color:#f2f5f9;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px)}
 #divehint.open{display:flex}
-#divehint button{background:none;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:4px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
-#divehint button.go{background:var(--accent);color:#0b1220;border-color:var(--accent)}
-#divehint .modes{display:flex;gap:4px;padding:0 6px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
-#diveStripes{background:rgba(138,180,248,.16)!important;border-color:var(--accent)!important}
+#divehint button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:16px;padding:6px 12px;font:500 13px Inter,sans-serif;cursor:pointer}
+#divehint button:hover{background:#323947}
+#divehint .modes{display:flex;gap:0;border:1px solid rgba(255,255,255,.22);border-radius:16px;overflow:hidden}
+#divehint .modes button{border:0;border-radius:0;background:transparent;color:#cfd6e0}
+#divehint .modes button.go{background:#e9edf3;color:#0b1220;font-weight:600}
+#diveStripes{background:var(--accent)!important;color:#0b1220!important;border-color:var(--accent)!important;font-weight:600!important}
 #insideTemp{font-size:12.5px;color:#cfd6e0;margin:6px 0}
 #insideTemp .tp{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:4px;font-variant-numeric:tabular-nums}
 #insideTemp .tp span:nth-child(odd){color:var(--muted)}
@@ -118,6 +123,8 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
   #layers{flex-wrap:wrap;right:72px}
   #opts{min-width:0;width:100%;order:-1;padding:8px 12px}
   #credit{display:none}
+  #brand{bottom:auto;top:122px}
+  #brand img{height:16px}
   #chips{top:72px;max-width:none;left:16px}
   .chip{height:36px;padding:0 12px;font-size:13px}
   #icepanel,#insidepanel{top:116px;max-height:45vh}
@@ -212,6 +219,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
   <div class="grp card"><button id="home" title="Whole moon">⌂</button></div>
 </div>
 
+<a id="brand" href="https://spaceoceancorp.com" target="_blank" rel="noopener" aria-label="Space Ocean Corp"><img src="spaceocean-wordmark-white.png" alt="Space Ocean Corp"></a>
 <div id="status">
   <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
   <span id="scale"><i></i><span></span></span>
