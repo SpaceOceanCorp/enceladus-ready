@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import argparse
 
-from . import ancillary, inset, release, serve, sources, tile, validate, viewer
+from . import ancillary, globe, inset, release, serve, sources, tile, validate, viewer
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("step", choices=["fetch", "cog", "tile", "ephem", "inset", "viewer", "release", "all"])
+    parser.add_argument("step", choices=["fetch", "cog", "tile", "ephem", "inset", "viewer", "globe", "release", "all"])
     step = parser.parse_args().step
 
     if step in ("fetch", "all"):
@@ -28,6 +28,8 @@ def main() -> None:
         inset.build()
     if step == "viewer":
         viewer.build()
+    if step == "globe":
+        globe.build_all()
     if step == "release":
         release.build()
 
