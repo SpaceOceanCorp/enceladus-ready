@@ -208,8 +208,11 @@ def build_features():
 def build_page(mosaic_max=5, relief_max=5):
     html = (Path(__file__).with_name("globe_template.html").read_text(encoding="utf8")
             .replace("__MOSAIC_MAX__", str(mosaic_max)).replace("__RELIEF_MAX__", str(relief_max)))
+    import time
+    html = html.replace("__BUILD__", str(int(time.time())))  # cache-busts dive.js
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "index.html").write_text(html, encoding="utf8")
+    (OUT / "dive.js").write_text(Path(__file__).with_name("globe_dive.js").read_text(encoding="utf8"), encoding="utf8")
     print(f"wrote {OUT / 'index.html'}")
 
 

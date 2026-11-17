@@ -101,6 +101,15 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #sechint{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:6;padding:7px 8px 7px 14px;font-size:13px;display:none;white-space:nowrap;align-items:center;gap:10px}
 #sechint button{background:none;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:4px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
 #sechint.open{display:flex}
+#divehint{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:6;padding:7px 8px 7px 14px;font-size:13px;display:none;white-space:nowrap;align-items:center;gap:10px}
+#divehint.open{display:flex}
+#divehint button{background:none;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:4px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
+#divehint button.go{background:var(--accent);color:#0b1220;border-color:var(--accent)}
+#divehint .modes{display:flex;gap:4px;padding:0 6px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+#diveStripes{background:rgba(138,180,248,.16)!important;border-color:var(--accent)!important}
+#insideTemp{font-size:12.5px;color:#cfd6e0;margin:6px 0}
+#insideTemp .tp{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:4px;font-variant-numeric:tabular-nums}
+#insideTemp .tp span:nth-child(odd){color:var(--muted)}
 #loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);z-index:10;pointer-events:none;transition:opacity .6s}
 @media (max-width:640px){
   #search{width:auto;right:16px}
@@ -139,7 +148,9 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
   <button class="chip" id="chipIce" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2v20M5 5l14 14M19 5L5 19"/></svg>Ice thickness</button>
   <button class="chip" id="chipSec" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M3 21h18"/></svg>Cross-section</button>
   <button class="chip" id="chipInside" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>Look inside</button>
+  <button class="chip" id="chipDive" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 15c2 0 2-1.5 4-1.5S8 15 10 15s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M2 20c2 0 2-1.5 4-1.5S8 20 10 20s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><circle cx="12" cy="6" r="3"/></svg>Dive</button>
 </div>
+<div class="card" id="divehint"><span id="divehintText">Click a spot on the moon to dive into the ocean below it</span><span class="modes"><button id="diveScuba" class="go">Scuba</button><button id="diveSub">Submarine</button></span><button class="go" id="diveStripes">Dive under the tiger stripes</button><button id="diveCancel">Cancel</button></div>
 <div class="card hide" id="insidepanel">
   <div class="top"><h3>Look inside</h3><button class="iconbtn" id="insideClose" aria-label="Close">&#10005;</button></div>
   <div id="insideHint">
@@ -155,6 +166,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
     </div>
     <p id="insideWhere"></p>
     <p class="cite" id="insideColumn"></p>
+    <div id="insideTemp"></div>
     <div class="row" style="display:block"><span>Interior model</span><select id="insideModelSel"></select></div>
     <p style="margin-top:10px"><button class="lnk" id="insideMove">Choose another spot</button></p>
   </div>
@@ -529,6 +541,7 @@ function refreshDot(o) {
 }
 function markSelected(o) { const old = selected; selected = o; refreshDot(old); refreshDot(o); }
 handler.setInputAction(e => {
+  if (dive.picking) { dive.pick(e.position); return; }
   if (inside.picking) { inside.pick(e.position); return; }
   if (section.picking) { section.addPoint(e.position); return; }
   const o = pickMarker(e.position);
@@ -976,6 +989,11 @@ const inside = {
     $('insideWhere').textContent = where;
     $('insideColumn').innerHTML = `Here: ice <b>${c.ice.toFixed(1)} km</b> · ocean <b>${c.ocean.toFixed(1)} km</b> · rocky core from <b>${coreDepth.toFixed(0)} km</b> down · centre at <b>${surf0.toFixed(0)} km</b>`;
     $('insideModelSel').value = m.key;
+    const T = tempAt(d, this.spot.lat, this.spot.lon, m), ts = surfaceTempK(this.spot.lat, this.spot.lon);
+    $('insideTemp').innerHTML = `<b>Temperature at the cut:</b> ${esc(T.text)}<div class="tp">`
+      + `<span>Surface</span><span>${kc(ts.k)}</span><span>Base of the ice</span><span>about −1 °C</span>`
+      + `<span>Ocean</span><span>about −1 °C, near freezing</span><span>Seafloor vents</span><span>above 90 °C</span>`
+      + `<span>Water in the core</span><span>above 90 °C</span></div><div class="cite" style="margin-top:4px">${esc(T.source)}</div>`;
     const stops = { surface: 0, ice: iceBase, ocean: iceBase + c.ocean / 2, floor: seafloor, core: seafloor + (surf0 - seafloor) / 2, centre: surf0 - 0.5 };
     document.querySelectorAll('#insideStops button').forEach(b => b.dataset.km = stops[b.dataset.stop].toFixed(2));
     $('insideDepth').max = (surf0 - 0.5).toFixed(1);
@@ -1030,6 +1048,71 @@ if (INT) {
   $('insideModelSel').onchange = e => setIceModel(e.target.value);
   document.querySelectorAll('#insideStops button').forEach(b => b.onclick = () => inside.setDepth(+b.dataset.km, true));
 }
+
+// ---------- temperature by depth (published values; profile through the ice is our calculation) ----------
+const kc = k => `${(k - 273.15).toFixed(0)} °C (${k.toFixed(0)} K)`;
+function surfaceTempK(lat, lon) {
+  // Near a tiger-stripe jet source: warm fractures, up to about 190 K measured along Damascus Sulcus.
+  let near = 1e9;
+  (window.ENC_JETS || []).forEach(j => {
+    const d = Math.hypot(lat - j.lat, ((lon - j.lon + 540) % 360 - 180) * Math.cos(lat * Math.PI / 180)) * Math.PI / 180 * 252;
+    if (d < near) near = d;
+  });
+  if (near < 6) return { k: 180, src: 'tiger-stripe fractures reach about 110–190 K' };
+  if (lat < -55) return { k: 85, src: 'south polar region averages about 85 K' };
+  return { k: 75, src: 'typical surface about 75 K' };
+}
+function tempAt(depthKm, lat, lon, m) {
+  m = m || ice.model || INT.models[0];
+  const c = interiorAt(lat, lon, m), ts = surfaceTempK(lat, lon), tb = 272.2;
+  if (depthKm <= 0.01) return { text: kc(ts.k), source: 'Surface: ' + ts.src + ' (Cassini infrared measurements).' };
+  if (depthKm < c.ice) {
+    const k = ts.k * Math.pow(tb / ts.k, depthKm / c.ice);
+    return { text: kc(k), source: `In the ice: warming from ${kc(ts.k)} at the surface to about −1 °C at the base. Conductive-ice profile, our calculation.` };
+  }
+  if (depthKm < c.ice + c.ocean)
+    return { text: 'about −1 °C (near freezing)', source: 'Ocean: slightly salty water (about 0.5–2% salt, Postberg et al. 2009) near its freezing point. No measured value; treated as near freezing throughout.' };
+  return { text: 'above 90 °C where water circulates', source: 'Core: water seeping through the porous rock is heated above 90 °C (Choblet et al. 2017); Cassini silica grains point to >90 °C seafloor reactions (Hsu et al. 2015).' };
+}
+
+// ---------- dive: swim in the ocean under the ice (loads dive.js on demand) ----------
+const dive = {
+  picking: false, running: null, mode: 'scuba',
+  begin() { this.picking = true; $('divehintText').textContent = 'Click a spot on the moon to dive into the ocean below it'; $('divehint').classList.add('open'); $('chipDive').classList.add('on'); },
+  cancel() { this.picking = false; $('divehint').classList.remove('open'); if (!this.running) $('chipDive').classList.remove('on'); },
+  pick(pos) {
+    const ray = camera.getPickRay(pos); const p = ray && (globe.pick(ray, scene) || camera.pickEllipsoid(pos, E)); if (!p) return;
+    const c = E.cartesianToCartographic(p); this.go(C.Math.toDegrees(c.latitude), C.Math.toDegrees(c.longitude));
+  },
+  async go(lat, lon) {
+    this.picking = false; camera.cancelFlight(); $('divehintText').textContent = 'Loading the dive…';
+    if (inside.on) inside.close();
+    try {
+      const mod = await import('./dive.js?v=__BUILD__');
+      $('divehint').classList.remove('open');
+      viewer.useDefaultRenderLoop = false;
+      this.running = mod.start({
+        interiorAt, model: ice.model || INT.models[0], feats, jets, lat, lon, mode: this.mode,
+        tempAt: (d, la, lo) => tempAt(d, la, lo),
+        onExit: (la, lo) => {
+          this.running = null; camera.cancelFlight(); viewer.useDefaultRenderLoop = true; $('chipDive').classList.remove('on');
+          camera.setView({ destination: C.Cartesian3.fromDegrees(lo, la, 300e3, E), orientation: { heading: 0, pitch: -Math.PI / 2, roll: 0 } });
+        },
+      });
+    } catch (err) {
+      console.error(err); viewer.useDefaultRenderLoop = true;
+      $('divehintText').textContent = 'The dive could not load (it needs WebGL and an internet connection for its 3D library).';
+    }
+  },
+};
+if (INT) {
+  $('chipDive').onclick = () => (dive.picking ? dive.cancel() : dive.begin());
+  $('diveCancel').onclick = () => dive.cancel();
+  $('diveStripes').onclick = () => dive.go(-84, -60);
+  const setDiveMode = m => { dive.mode = m; $('diveScuba').classList.toggle('go', m === 'scuba'); $('diveSub').classList.toggle('go', m === 'sub'); };
+  $('diveScuba').onclick = () => setDiveMode('scuba');
+  $('diveSub').onclick = () => setDiveMode('sub');
+} else $('chipDive').classList.add('hide');
 
 window.encViewer = viewer;
 })();

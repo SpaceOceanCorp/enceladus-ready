@@ -1,0 +1,465 @@
+// Dive mode: swim through Enceladus's ocean, under the ice shell and above the rocky core.
+//
+// Loaded on demand by the globe page (import('./dive.js')). Units are kilometres in a
+// body-centred frame: x toward 0 E, y toward 90 E, z toward the north pole.
+//
+// What is data and what is not:
+// * The ice ceiling's shape is the selected ice-thickness model (features larger than ~200 km).
+// * The tiger-stripe fractures follow the 100 Porco et al. (2014) jet source positions.
+// * Feature names overhead are the IAU names at their mapped positions.
+// * Small-scale texture of the ice and seafloor, and the hydrothermal vents, are illustrative.
+//   Cassini found evidence of hot water reacting with rock (silica grains, hydrogen), but no one
+//   knows where vents are or what the seafloor looks like.
+// * Under kilometres of ice the ocean is completely dark; the dive lights are for viewing.
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const D2R = Math.PI / 180;
+const toXYZ = (lat, lon, r) => new THREE.Vector3(r * Math.cos(lat * D2R) * Math.cos(lon * D2R), r * Math.cos(lat * D2R) * Math.sin(lon * D2R), r * Math.sin(lat * D2R));
+const toLL = v => { const r = v.length(); return { lat: Math.asin(v.z / r) / D2R, lon: Math.atan2(v.y, v.x) / D2R, r }; };
+
+// Surfaces lit only by the diver's lamps, with fog that swallows everything beyond a few km.
+const SURF_VS = `
+varying vec3 vPos; varying vec3 vNormal;
+#include <common>
+#include <logdepthbuf_pars_vertex>
+void main() {
+  vPos = position; vNormal = normal;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  #include <logdepthbuf_vertex>
+}`;
+const SURF_FS = `
+uniform vec3 uColor; uniform vec3 uColor2; uniform vec3 uCam; uniform vec3 uLight; uniform vec3 uLampDir; uniform float uLamp;
+uniform float uFog; uniform vec3 uFogColor; uniform float uScale; uniform float uAmbient; uniform float uBump;
+varying vec3 vPos; varying vec3 vNormal;
+#include <common>
+#include <logdepthbuf_pars_fragment>
+float h3(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float n3(vec3 x) {
+  vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(h3(i + vec3(0,0,1)), h3(i + vec3(1,0,1)), f.x), mix(h3(i + vec3(0,1,1)), h3(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+float fbm(vec3 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * n3(p); p *= 2.07; a *= 0.5; } return s; }
+void main() {
+  #include <logdepthbuf_fragment>
+  vec3 toLamp = uLight - vPos; float d = length(toLamp); vec3 L = toLamp / d;
+  float dc = length(uCam - vPos);
+  vec3 q = vPos * uScale;
+  float n = fbm(q);
+  float e = 0.04;
+  vec3 g = vec3(fbm(q + vec3(e,0,0)) - n, fbm(q + vec3(0,e,0)) - n, fbm(q + vec3(0,0,e)) - n) / e;
+  vec3 N = normalize(normalize(vNormal) - uBump * g);
+  if (dot(N, L) < 0.0) N = -N;
+  float cone = smoothstep(0.45, 0.93, dot(-L, uLampDir));
+  float lamp = uLamp * max(dot(N, L), 0.0) * (0.18 + 0.82 * cone) / (1.0 + 0.06 * d * d);
+  vec3 col = mix(uColor, uColor2, smoothstep(0.3, 0.75, n)) * (0.8 + 0.4 * fbm(q * 0.13));
+  vec3 lit = col * (uAmbient + 2.4 * lamp);
+  float fogf = 1.0 - exp(-uFog * dc * dc);
+  gl_FragColor = vec4(mix(lit, uFogColor, fogf), 1.0);
+}`;
+
+function sphereShell(radiusAt, step) {
+  const nLat = Math.round(180 / step) + 1, nLon = Math.round(360 / step) + 1;
+  const pos = new Float32Array(nLat * nLon * 3);
+  let k = 0;
+  for (let i = 0; i < nLat; i++) {
+    const lat = -90 + i * step;
+    for (let j = 0; j < nLon; j++) {
+      const lon = -180 + j * step, r = radiusAt(lat, lon), v = toXYZ(lat, lon, r);
+      pos[k++] = v.x; pos[k++] = v.y; pos[k++] = v.z;
+    }
+  }
+  const idx = new Uint32Array((nLat - 1) * (nLon - 1) * 6);
+  k = 0;
+  for (let i = 0; i < nLat - 1; i++) for (let j = 0; j < nLon - 1; j++) {
+    const a = i * nLon + j, b = a + nLon;
+    idx[k++] = a; idx[k++] = b; idx[k++] = a + 1; idx[k++] = a + 1; idx[k++] = b; idx[k++] = b + 1;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setIndex(new THREE.BufferAttribute(idx, 1));
+  geo.computeVertexNormals();
+  geo.computeBoundingSphere();
+  return geo;
+}
+
+function surfMaterial(c1, c2, scale, bump, ambient) {
+  return new THREE.ShaderMaterial({
+    vertexShader: SURF_VS, fragmentShader: SURF_FS, side: THREE.DoubleSide,
+    uniforms: {
+      uColor: { value: new THREE.Color(c1) }, uColor2: { value: new THREE.Color(c2) }, uCam: { value: new THREE.Vector3() }, uLight: { value: new THREE.Vector3() },
+      uLampDir: { value: new THREE.Vector3(1, 0, 0) }, uLamp: { value: 1 }, uFog: { value: 0.0035 },
+      uFogColor: { value: new THREE.Color(0x02101c) }, uScale: { value: scale }, uAmbient: { value: ambient }, uBump: { value: bump },
+    },
+  });
+}
+
+// Deterministic pseudo-random numbers so the illustrative vents are always in the same place.
+function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+
+export function start(opts) {
+  const { interiorAt, model, feats, jets, onExit, tempAt } = opts;
+  const ceilingAt = (lat, lon) => { const c = interiorAt(lat, lon, model); return c.surf - c.ice; };
+  const surfAt = (lat, lon) => interiorAt(lat, lon, model).surf;
+  const floorNoise = (lat, lon) => { const v = toXYZ(lat, lon, 1); return 0.35 * Math.sin(v.x * 37 + v.y * 11) * Math.cos(v.y * 29 - v.z * 17) + 0.25 * Math.sin(v.z * 53 + v.x * 23); };
+  const floorAt = (lat, lon) => model.core_km + floorNoise(lat, lon);
+
+  // ---------- DOM ----------
+  const root = document.createElement('div');
+  root.id = 'dive';
+  root.innerHTML = `
+  <style>
+    #dive{position:fixed;inset:0;z-index:50;background:#02101c;color:#e9edf3;font:14px/1.4 Inter,system-ui,sans-serif;overflow:hidden;touch-action:none}
+    #dive canvas{display:block;width:100%;height:100%;cursor:grab}
+    #dive canvas:active{cursor:grabbing}
+    #dive .card{background:rgba(8,20,32,.82);border:1px solid rgba(255,255,255,.12);border-radius:12px;backdrop-filter:blur(8px)}
+    #dive .hud{position:absolute;top:16px;left:16px;padding:14px 16px;width:300px;max-width:calc(100vw - 32px)}
+    #dive .hud h2{margin:0 0 8px;font-size:16px;font-weight:600}
+    #dive .hud dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-variant-numeric:tabular-nums;font-size:13px}
+    #dive .hud dt{color:#9aa4b2}#dive .hud dd{margin:0}
+    #dive .hud .over{margin-top:8px;font-size:12.5px;color:#cfe3f5}
+    #dive .note{position:absolute;left:16px;bottom:16px;max-width:min(520px,calc(100vw - 32px));padding:10px 14px;font-size:12px;color:#9aa4b2}
+    #dive .top{position:absolute;top:16px;right:16px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    #dive button{font:500 13px Inter,sans-serif;color:#e9edf3;background:rgba(8,20,32,.82);border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:8px 14px;cursor:pointer}
+    #dive button:hover{background:#1c2b3a}
+    #dive button.on{background:#8ab4f8;color:#0b1220;border-color:#8ab4f8}
+    #dive button.exit{background:#8ab4f8;color:#0b1220;border-color:#8ab4f8;font-weight:600}
+    #dive .keys{position:absolute;right:16px;bottom:16px;padding:10px 14px;font-size:12px;color:#9aa4b2;max-width:280px}
+    #dive .keys b{color:#e9edf3}
+    #dive .pad{position:absolute;right:16px;bottom:110px;display:none;grid-template-columns:repeat(3,52px);gap:6px}
+    #dive .pad button{width:52px;height:52px;padding:0;border-radius:12px;font-size:18px}
+    #dive .lbl{position:absolute;transform:translate(-50%,-100%);font:600 12px Inter,sans-serif;color:#bfe6ff;text-shadow:0 0 6px #000,0 0 2px #000;white-space:nowrap;pointer-events:none}
+    #dive .lbl.vent{color:#ffc58a}
+    #dive .lbl small{display:block;font-weight:400;color:#8fb3cc;text-align:center}
+    #dive .fade{position:absolute;inset:0;background:#02101c;pointer-events:none;transition:opacity 1.2s}
+    @media (pointer:coarse){ #dive .pad{display:grid} #dive .keys{display:none} }
+    @media (max-width:640px){ #dive .hud{width:auto;right:16px;top:64px;padding:10px 12px} #dive .note{display:none} }
+  </style>
+  <canvas></canvas>
+  <div class="labels"></div>
+  <div class="card hud"><h2 data-k="title">Diving in the ocean of Enceladus</h2>
+    <dl><dt>Position</dt><dd data-k="pos">—</dd>
+    <dt>Below the surface</dt><dd data-k="depth">—</dd>
+    <dt>Ice above you</dt><dd data-k="ice">—</dd>
+    <dt>Water above you</dt><dd data-k="toice">—</dd>
+    <dt>Seafloor below</dt><dd data-k="tofloor">—</dd>
+    <dt>Water temperature</dt><dd data-k="temp">—</dd>
+    <dt>Speed</dt><dd data-k="speed">—</dd></dl>
+    <div class="over" data-k="tempsrc" style="color:#9aa4b2;font-size:11.5px"></div>
+    <div class="over" data-k="over"></div></div>
+  <div class="top">
+    <button data-a="mode">Switch to submarine</button>
+    <button data-a="lights" class="on">Dive lights</button>
+    <button data-a="stripes">Go to tiger stripes</button>
+    <button data-a="up">Look up</button>
+    <button data-a="exit" class="exit">Exit dive</button>
+  </div>
+  <div class="card keys"><b>Drag</b> to look around · <b>W A S D</b> or arrows to swim · <b>Space</b> rise · <b>Shift</b> sink · <b>+ / −</b> or wheel for speed · <b>Esc</b> to exit</div>
+  <div class="pad">
+    <span></span><button data-m="f">▲</button><button data-m="u">⤒</button>
+    <button data-m="l">◀</button><button data-m="b">▼</button><button data-m="r">▶</button>
+    <span></span><button data-m="d">⤓</button><span></span>
+  </div>
+  <div class="card note">The ice ceiling's shape comes from the selected model (${esc(model.name)}). The fractures follow the mapped jet sources. Small-scale texture and the hydrothermal vents are illustrative: no one has seen the seafloor. Under kilometres of ice it would be completely dark, so the lights are yours.</div>
+  <div class="fade"></div>`;
+  document.body.appendChild(root);
+  const $ = sel => root.querySelector(sel);
+  const hud = k => root.querySelector(`[data-k="${k}"]`);
+  const canvas = $('canvas'), labelsEl = $('.labels');
+
+  // ---------- three.js scene ----------
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x02101c);
+  scene.fog = new THREE.FogExp2(0x02101c, 0.06);
+  const camera = new THREE.PerspectiveCamera(72, 1, 0.003, 600);
+
+  const iceMat = surfMaterial(0xcfe6f7, 0x9cc7e8, 2.2, 0.035, 0.05);
+  const floorMat = surfMaterial(0x6d5643, 0x3c3029, 3.0, 0.06, 0.04);
+  const ceiling = new THREE.Mesh(sphereShell(ceilingAt, 0.5), iceMat);
+  const seafloor = new THREE.Mesh(sphereShell(floorAt, 0.5), floorMat);
+  ceiling.frustumCulled = seafloor.frustumCulled = false;
+  scene.add(ceiling, seafloor);
+
+  // Tiger-stripe fractures: glowing slots in the ceiling along each stripe's jet sources.
+  const bySulcus = {};
+  jets.forEach(j => (bySulcus[j.sulcus] = bySulcus[j.sulcus] || []).push(j));
+  const crackMat = new THREE.MeshBasicMaterial({ color: 0x7ee2ff, transparent: true, opacity: 0.85, fog: true });
+  Object.values(bySulcus).forEach(list => {
+    list.sort((a, b) => (+a.id.replace(/\D/g, '')) - (+b.id.replace(/\D/g, '')));
+    // Split where neighbouring jets are far apart, so each fracture segment is drawn on its own.
+    let seg = [];
+    const flush = () => {
+      if (seg.length < 2) { seg = []; return; }
+      const pts = seg.map(j => toXYZ(j.lat, j.lon, ceilingAt(j.lat, j.lon) + 0.02));
+      const curve = new THREE.CatmullRomCurve3(pts);
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, pts.length * 12, 0.12, 6, false), crackMat);
+      tube.frustumCulled = false; scene.add(tube); seg = [];
+    };
+    list.forEach((j, i) => {
+      if (i && toXYZ(j.lat, j.lon, 1).distanceTo(toXYZ(list[i - 1].lat, list[i - 1].lon, 1)) * 230 > 25) flush();
+      seg.push(j);
+    });
+    flush();
+  });
+
+  // Water and grains rising toward each jet source: the plumes start down here.
+  const rand = rng(42);
+  const plumeN = 36, plume = [];
+  jets.forEach(j => {
+    const top = ceilingAt(j.lat, j.lon), base = toXYZ(j.lat, j.lon, 1);
+    for (let i = 0; i < plumeN; i++) plume.push({ base, top, off: new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).multiplyScalar(1.2), t: rand() });
+  });
+  const plumeGeo = new THREE.BufferGeometry();
+  const plumePos = new Float32Array(plume.length * 3);
+  plumeGeo.setAttribute('position', new THREE.BufferAttribute(plumePos, 3));
+  const plumePts = new THREE.Points(plumeGeo, new THREE.PointsMaterial({ color: 0xbff1ff, size: 0.05, sizeAttenuation: true, transparent: true, opacity: 0.8, fog: true }));
+  plumePts.frustumCulled = false; scene.add(plumePts);
+
+  // Illustrative hydrothermal vents on the seafloor under the south polar region.
+  const vents = [], ventRand = rng(7), ventMat = new THREE.MeshBasicMaterial({ color: 0x4a3a2e, fog: true });
+  const ventGlow = new THREE.MeshBasicMaterial({ color: 0xff9a3c, fog: true });
+  for (let i = 0; i < 9; i++) {
+    const lat = -70 - ventRand() * 18, lon = -180 + ventRand() * 360, r = floorAt(lat, lon);
+    const up = toXYZ(lat, lon, 1).normalize(), h = 0.4 + ventRand() * 0.6;
+    const g = new THREE.Group();
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.18, h, 10, 1, true), ventMat);
+    cone.position.y = h / 2; g.add(cone);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), ventGlow); tip.position.y = h; g.add(tip);
+    g.position.copy(up.clone().multiplyScalar(r - 0.05));
+    g.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
+    scene.add(g);
+    vents.push({ lat, lon, up, r, h });
+  }
+  const ventN = 60, ventParts = [];
+  vents.forEach(v => { for (let i = 0; i < ventN; i++) ventParts.push({ v, t: Math.random(), off: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(0.25) }); });
+  const ventGeo = new THREE.BufferGeometry(), ventPos = new Float32Array(ventParts.length * 3);
+  ventGeo.setAttribute('position', new THREE.BufferAttribute(ventPos, 3));
+  const ventPts = new THREE.Points(ventGeo, new THREE.PointsMaterial({ color: 0xffb070, size: 0.06, transparent: true, opacity: 0.75, fog: true }));
+  ventPts.frustumCulled = false; scene.add(ventPts);
+
+  // Drifting specks around the diver, for a sense of motion in the dark water.
+  const snowN = 2500, snowBox = 3.0, snowPos = new Float32Array(snowN * 3), snowOff = new Float32Array(snowN * 3);
+  for (let i = 0; i < snowN * 3; i++) snowOff[i] = (Math.random() - 0.5) * 2 * snowBox;
+  const snowGeo = new THREE.BufferGeometry(); snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+  const snow = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: 0x9fc4dd, size: 0.012, transparent: true, opacity: 0.6, fog: true }));
+  snow.frustumCulled = false; scene.add(snow);
+  // Lights for the submarine model itself (the ice and seafloor are lit in their shaders).
+  scene.add(new THREE.AmbientLight(0x5a7890, 0.55));
+  const subLight = new THREE.PointLight(0xffffff, 0.7, 0.4, 1.5); scene.add(subLight);
+  const sub = new THREE.Group();
+  {
+    const hullMat = new THREE.MeshStandardMaterial({ color: 0xf2c230, roughness: 0.45, metalness: 0.2 });
+    const darkMat = new THREE.MeshStandardMaterial({ color: 0x2b3440, roughness: 0.6, metalness: 0.4 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x9fd8ff, emissive: 0x2a6f9a, emissiveIntensity: 0.6, roughness: 0.1 });
+    const beamMat = new THREE.MeshBasicMaterial({ color: 0xfff6d8, transparent: true, opacity: 0.035, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+    // Built along +z (forward), +y up; units km, so the hull is about 30 m long.
+    const hull = new THREE.Mesh(new THREE.CapsuleGeometry(0.0045, 0.02, 6, 16), hullMat); hull.rotation.x = Math.PI / 2; sub.add(hull);
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.005, 0.008), hullMat); tower.position.set(0, 0.005, 0.002); sub.add(tower);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.0038, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), glassMat); dome.rotation.x = Math.PI / 2; dome.position.z = 0.0135; sub.add(dome);
+    const finH = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.0006, 0.004), darkMat); finH.position.z = -0.012; sub.add(finH);
+    const finV = new THREE.Mesh(new THREE.BoxGeometry(0.0006, 0.009, 0.004), darkMat); finV.position.z = -0.012; sub.add(finV);
+    const prop = new THREE.Group();
+    for (let i = 0; i < 3; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.0007, 0.005, 0.0004), darkMat); b.rotation.z = i * Math.PI * 2 / 3; b.position.y = 0; prop.add(b); }
+    prop.position.z = -0.0165; sub.add(prop); sub.userData.prop = prop;
+    [-0.003, 0.003].forEach(x => {
+      const lampM = new THREE.Mesh(new THREE.SphereGeometry(0.0009, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffee })); lampM.position.set(x, -0.002, 0.016); sub.add(lampM);
+      const beam = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.3, 20, 1, true), beamMat); beam.rotation.x = -Math.PI / 2; beam.position.set(x, -0.002, 0.016 + 0.15); sub.add(beam);
+    });
+  }
+  sub.visible = false; scene.add(sub);
+
+  // ---------- diver state ----------
+  const st = {
+    pos: new THREE.Vector3(), fwd: new THREE.Vector3(), pitch: 10 * D2R, speed: 0.4, lights: true, mode: 'scuba',
+    keys: new Set(), pad: new Set(), drag: null, alive: true, last: performance.now(),
+  };
+  function placeAt(lat, lon) {
+    const r = ceilingAt(lat, lon) - 1.2;
+    st.pos.copy(toXYZ(lat, lon, r));
+    const up = st.pos.clone().normalize();
+    const north = new THREE.Vector3(0, 0, 1);
+    st.fwd.copy(Math.abs(up.dot(north)) > 0.98 ? new THREE.Vector3(1, 0, 0) : north).addScaledVector(up, -up.dot(Math.abs(up.dot(north)) > 0.98 ? new THREE.Vector3(1, 0, 0) : north)).normalize();
+    st.pitch = 12 * D2R;
+  }
+  placeAt(opts.lat, opts.lon);
+
+  // ---------- feature labels on the ceiling ----------
+  const labelPool = [];
+  const allLabels = [
+    ...feats.map(f => ({ name: f.name, sub: f.type, lat: f.lat, lon: f.lon, kind: 'f', size: f.diameter_km })),
+    ...vents.map(v => ({ name: 'Hydrothermal vent', sub: 'illustrative', lat: v.lat, lon: v.lon, kind: 'v', size: 0, r: v.r + v.h + 0.2 })),
+  ];
+  allLabels.forEach(l => { if (l.kind === 'f') l.p = toXYZ(l.lat, l.lon, ceilingAt(l.lat, l.lon) - 0.15); else l.p = toXYZ(l.lat, l.lon, l.r); });
+  function updateLabels() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const cand = [];
+    for (const l of allLabels) {
+      const d = l.p.distanceTo(st.pos);
+      const maxD = l.kind === 'v' ? 6 : Math.min(40, 8 + l.size * 0.25);
+      if (d > maxD) continue;
+      const v = l.p.clone().project(camera);
+      if (v.z > 1 || v.x < -1.1 || v.x > 1.1 || v.y < -1.1 || v.y > 1.1) continue;
+      cand.push({ l, x: (v.x + 1) / 2 * w, y: (1 - v.y) / 2 * h, d });
+    }
+    cand.sort((a, b) => a.d - b.d);
+    cand.length = Math.min(cand.length, 14);
+    while (labelPool.length < cand.length) { const e = document.createElement('div'); e.className = 'lbl'; labelsEl.appendChild(e); labelPool.push(e); }
+    labelPool.forEach((e, i) => {
+      const c = cand[i];
+      if (!c) { e.style.display = 'none'; return; }
+      e.style.display = 'block'; e.className = 'lbl' + (c.l.kind === 'v' ? ' vent' : '');
+      e.style.left = c.x + 'px'; e.style.top = c.y + 'px'; e.style.opacity = Math.max(0.35, 1 - c.d / 45);
+      e.innerHTML = `${esc(c.l.name)}<small>${esc(c.l.sub)} · ${c.d.toFixed(1)} km</small>`;
+    });
+  }
+
+  // ---------- input ----------
+  const onKey = (e, down) => {
+    const k = e.key.toLowerCase();
+    if (down && k === 'escape') return stop();
+    if (down && (k === '+' || k === '=')) st.speed = Math.min(st.speed * 1.5, 20);
+    if (down && (k === '-' || k === '_')) st.speed = Math.max(st.speed / 1.5, 0.02);
+    if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'shift', 'e', 'q', 'c'].includes(k)) {
+      down ? st.keys.add(k) : st.keys.delete(k); e.preventDefault();
+    }
+  };
+  const kd = e => onKey(e, true), ku = e => onKey(e, false);
+  window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
+  canvas.addEventListener('pointerdown', e => { st.drag = { x: e.clientX, y: e.clientY }; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} });
+  canvas.addEventListener('pointermove', e => {
+    if (!st.drag) return;
+    const dx = e.clientX - st.drag.x, dy = e.clientY - st.drag.y; st.drag = { x: e.clientX, y: e.clientY };
+    const up = st.pos.clone().normalize();
+    st.fwd.applyAxisAngle(up, -dx * 0.004);
+    st.pitch = Math.max(-1.45, Math.min(1.45, st.pitch - dy * 0.004));
+  });
+  const endDrag = () => { st.drag = null; };
+  canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('wheel', e => { st.speed = Math.max(0.02, Math.min(20, st.speed * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); e.preventDefault(); }, { passive: false });
+  root.querySelectorAll('.pad button').forEach(b => {
+    const on = e => { st.pad.add(b.dataset.m); e.preventDefault(); }, off = () => st.pad.delete(b.dataset.m);
+    b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
+  });
+  root.querySelector('[data-a="exit"]').onclick = () => stop();
+  function setMode(m) {
+    st.mode = m; sub.visible = m === 'sub';
+    st.speed = m === 'sub' ? Math.max(st.speed, 1.5) : Math.min(st.speed, 0.6);
+    root.querySelector('[data-a="mode"]').textContent = m === 'sub' ? 'Switch to scuba' : 'Switch to submarine';
+    hud('title').textContent = m === 'sub' ? 'Submarine in the ocean of Enceladus' : 'Diving in the ocean of Enceladus';
+    root.querySelector('[data-a="lights"]').textContent = st.lights ? (m === 'sub' ? 'Sub lights' : 'Dive lights') : 'Real darkness';
+  }
+  root.querySelector('[data-a="mode"]').onclick = () => setMode(st.mode === 'sub' ? 'scuba' : 'sub');
+  root.querySelector('[data-a="lights"]').onclick = e => { st.lights = !st.lights; e.target.classList.toggle('on', st.lights); e.target.textContent = st.lights ? (st.mode === 'sub' ? 'Sub lights' : 'Dive lights') : 'Real darkness'; };
+  root.querySelector('[data-a="stripes"]').onclick = () => { fade(() => placeAt(-84, -60)); };
+  root.querySelector('[data-a="up"]').onclick = () => { st.pitch = 60 * D2R; };
+  const fadeEl = $('.fade');
+  function fade(fn) { fadeEl.style.opacity = 1; setTimeout(() => { fn(); fadeEl.style.opacity = 0; }, 450); }
+
+  function resize() {
+    const w = root.clientWidth, h = root.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize); resize();
+
+  // ---------- loop ----------
+  let hudT = 0;
+  function frame(now) {
+    if (!st.alive) return;
+    const dt = Math.min((now - st.last) / 1000, 0.1); st.last = now;
+    const up = st.pos.clone().normalize();
+    st.fwd.addScaledVector(up, -st.fwd.dot(up)).normalize();       // keep heading level as we travel round
+    const right = new THREE.Vector3().crossVectors(st.fwd, up).normalize();
+    const look = st.fwd.clone().multiplyScalar(Math.cos(st.pitch)).addScaledVector(up, Math.sin(st.pitch));
+    const has = (...k) => k.some(x => st.keys.has(x));
+    const mv = new THREE.Vector3();
+    if (has('w', 'arrowup') || st.pad.has('f')) mv.add(look);
+    if (has('s', 'arrowdown') || st.pad.has('b')) mv.sub(look);
+    if (has('d', 'arrowright') || st.pad.has('r')) mv.add(right);
+    if (has('a', 'arrowleft') || st.pad.has('l')) mv.sub(right);
+    if (has(' ', 'e') || st.pad.has('u')) mv.add(up);
+    if (has('shift', 'q', 'c') || st.pad.has('d')) mv.sub(up);
+    if (mv.lengthSq() > 0) st.pos.addScaledVector(mv.normalize(), st.speed * dt);
+    // Stay in the water: below the ice, above the seafloor.
+    const ll = toLL(st.pos), ceil = ceilingAt(ll.lat, ll.lon), floor = floorAt(ll.lat, ll.lon);
+    const clear = st.mode === 'sub' ? 0.06 : 0.12;
+    const r = Math.min(Math.max(ll.r, floor + clear), ceil - clear);
+    st.pos.setLength(r);
+
+    camera.up.copy(up);
+    let lampPos = st.pos;
+    if (st.mode === 'sub') {
+      sub.position.copy(st.pos);
+      const m4 = new THREE.Matrix4().makeBasis(right.clone().negate(), new THREE.Vector3().crossVectors(look, right.clone().negate()).normalize(), look);
+      sub.quaternion.setFromRotationMatrix(m4);
+      sub.userData.prop.rotation.z += dt * (mv.lengthSq() > 0 ? 25 : 3);
+      camera.position.copy(st.pos).addScaledVector(look, -0.075).addScaledVector(up, 0.022);
+      camera.lookAt(st.pos.clone().addScaledVector(look, 0.05));
+      lampPos = st.pos.clone().addScaledVector(look, 0.02);
+      subLight.position.copy(camera.position).addScaledVector(up, 0.01);
+    } else {
+      camera.position.copy(st.pos);
+      camera.lookAt(st.pos.clone().add(look));
+    }
+    const lampOn = st.lights ? 1 : 0;
+    [iceMat, floorMat].forEach(m => { m.uniforms.uCam.value.copy(camera.position); m.uniforms.uLight.value.copy(lampPos); m.uniforms.uLampDir.value.copy(look); m.uniforms.uLamp.value = lampOn; m.uniforms.uAmbient.value = st.lights ? (m === iceMat ? 0.05 : 0.04) : 0.004; });
+
+    // Particles.
+    for (let i = 0; i < plume.length; i++) {
+      const p = plume[i]; p.t += dt * 0.12; if (p.t > 1) p.t -= 1;
+      const rr = p.top - 2.5 + 2.5 * p.t, q = p.base.clone().multiplyScalar(rr).add(p.off.clone().multiplyScalar(1 - p.t));
+      plumePos[i * 3] = q.x; plumePos[i * 3 + 1] = q.y; plumePos[i * 3 + 2] = q.z;
+    }
+    plumeGeo.attributes.position.needsUpdate = true;
+    for (let i = 0; i < ventParts.length; i++) {
+      const p = ventParts[i]; p.t += dt * 0.25; if (p.t > 1) p.t -= 1;
+      const q = p.v.up.clone().multiplyScalar(p.v.r + p.v.h + p.t * 1.6).add(p.off.clone().multiplyScalar(1 + 3 * p.t));
+      ventPos[i * 3] = q.x; ventPos[i * 3 + 1] = q.y; ventPos[i * 3 + 2] = q.z;
+    }
+    ventGeo.attributes.position.needsUpdate = true;
+    for (let i = 0; i < snowN; i++) for (let a = 0; a < 3; a++) {
+      const c = st.pos.getComponent(a);
+      let v = snowOff[i * 3 + a] - c; v = ((v + snowBox) % (2 * snowBox) + 2 * snowBox) % (2 * snowBox) - snowBox;
+      snowPos[i * 3 + a] = c + v;
+    }
+    snowGeo.attributes.position.needsUpdate = true;
+
+    renderer.render(scene, camera);
+    updateLabels();
+
+    if (now - hudT > 150) {
+      hudT = now;
+      const s = surfAt(ll.lat, ll.lon);
+      hud('pos').textContent = `${Math.abs(ll.lat).toFixed(2)}°${ll.lat >= 0 ? 'N' : 'S'}, ${Math.abs(ll.lon).toFixed(2)}°${ll.lon >= 0 ? 'E' : 'W'}`;
+      hud('depth').textContent = (s - r).toFixed(1) + ' km';
+      hud('ice').textContent = (s - ceil).toFixed(1) + ' km thick';
+      hud('toice').textContent = (ceil - r).toFixed(2) + ' km';
+      hud('tofloor').textContent = (r - floor).toFixed(1) + ' km';
+      // Temperature at this depth; within 1.5 km of an illustrative vent, say what vent water reaches.
+      let nearVent = vents.some(v => st.pos.distanceTo(v.up.clone().multiplyScalar(v.r + v.h)) < 1.5);
+      const T = tempAt(s - r, ll.lat, ll.lon);
+      hud('temp').textContent = nearVent ? 'warmer near the vent' : T.text;
+      hud('tempsrc').textContent = nearVent ? 'Vent water: above 90 °C where it leaves the seafloor (Hsu et al. 2015). The vent itself is illustrative.' : T.source;
+      hud('speed').textContent = st.speed < 1 ? (st.speed * 1000).toFixed(0) + ' m/s' : st.speed.toFixed(1) + ' km/s';
+      let best = null, bd = 1e9;
+      feats.forEach(f => { const d = toXYZ(f.lat, f.lon, 1).angleTo(up) * s; if (d < bd) { bd = d; best = f; } });
+      hud('over').textContent = best ? (bd < Math.max(best.diameter_km / 2, 5) ? `Overhead: ${best.name} (${best.type})` : `Nearest named feature: ${best.name}, ${bd.toFixed(0)} km away`) : '';
+    }
+    requestAnimationFrame(frame);
+  }
+  setMode(opts.mode === 'sub' ? 'sub' : 'scuba');
+  fadeEl.style.opacity = 1; requestAnimationFrame(t => { st.last = t; fadeEl.style.opacity = 0; requestAnimationFrame(frame); });
+
+  function stop() {
+    if (!st.alive) return;
+    st.alive = false;
+    window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); window.removeEventListener('resize', resize);
+    const ll = toLL(st.pos);
+    renderer.dispose(); scene.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+    root.remove();
+    onExit && onExit(ll.lat, ll.lon);
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  return { stop };
+}
