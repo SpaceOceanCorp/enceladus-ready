@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enceladus Globe</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.123.0/Widgets/widgets.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#000;--panel:rgba(22,24,30,.92);--panel-solid:#16181e;--line:rgba(255,255,255,.12);
+  --text:#e9edf3;--muted:#9aa4b2;--accent:#8ab4f8;--stripe:#7ee2ff;--jet:#ffd36b;
+  --shadow:0 2px 10px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.4 Inter,system-ui,sans-serif;overflow:hidden}
+#globe{position:absolute;inset:0}
+.cesium-viewer-bottom,.cesium-widget-credits{display:none!important}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);backdrop-filter:blur(8px)}
+#search{position:absolute;top:16px;left:16px;width:380px;max-width:calc(100vw - 32px);z-index:5}
+#search .bar{display:flex;align-items:center;gap:8px;padding:0 6px 0 14px;height:48px;border-radius:24px}
+#search input{flex:1;background:none;border:0;color:var(--text);font:inherit;font-size:15px;outline:none;min-width:0}
+#search input::placeholder{color:var(--muted)}
+.iconbtn{background:none;border:0;color:var(--muted);width:36px;height:36px;border-radius:50%;cursor:pointer;display:grid;place-items:center}
+.iconbtn:hover{background:rgba(255,255,255,.08);color:var(--text)}
+#results{margin-top:6px;max-height:50vh;overflow:auto;display:none;padding:6px 0}
+#results.open{display:block}
+#results button{display:flex;width:100%;gap:10px;align-items:baseline;padding:8px 14px;background:none;border:0;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+#results button:hover,#results button.sel{background:rgba(138,180,248,.12)}
+#results small{color:var(--muted)}
+#info{position:absolute;top:76px;left:16px;width:380px;max-width:calc(100vw - 32px);max-height:calc(100vh - 160px);overflow:auto;padding:18px;display:none;z-index:4}
+#info.open{display:block}
+#info h2{margin:0 0 2px;font-size:22px;font-weight:600}
+#info .type{color:var(--muted);margin-bottom:14px}
+#info dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0 0 14px}
+#info dt{color:var(--muted)}#info dd{margin:0;font-variant-numeric:tabular-nums}
+#info p{margin:0 0 12px;color:#cfd6e0}
+#info a{color:var(--accent);text-decoration:none}#info a:hover{text-decoration:underline}
+#info .close{position:absolute;top:10px;right:10px}
+.zoombtn{background:var(--accent);color:#0b1220;border:0;border-radius:18px;padding:8px 16px;font:600 13px Inter,sans-serif;cursor:pointer}
+.zoombtn:hover{filter:brightness(1.1)}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:rgba(126,226,255,.14);color:var(--stripe);margin-left:6px;vertical-align:middle}
+#layers{position:absolute;left:16px;bottom:44px;z-index:3;display:flex;gap:8px;align-items:flex-end}
+.layerbtn{width:76px;height:76px;border-radius:10px;border:2px solid #fff;overflow:hidden;position:relative;cursor:pointer;padding:0;background:#222;box-shadow:var(--shadow)}
+.layerbtn img{width:100%;height:100%;object-fit:cover;display:block}
+.layerbtn span{position:absolute;left:0;right:0;bottom:0;padding:3px 0;font-size:11px;font-weight:500;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff}
+.layerbtn.active{border-color:var(--accent)}
+#opts{padding:12px 14px;min-width:230px;font-size:13px}
+#opts label{display:flex;align-items:center;gap:8px;margin:5px 0;cursor:pointer}
+#opts .row{display:flex;justify-content:space-between;color:var(--muted);margin-top:8px}
+#opts input[type=range]{width:100%;accent-color:var(--accent)}
+#opts input[type=checkbox]{accent-color:var(--accent)}
+#ctrls{position:absolute;right:16px;bottom:44px;z-index:3;display:flex;flex-direction:column;gap:8px;align-items:center}
+#ctrls .grp{display:flex;flex-direction:column;border-radius:10px;overflow:hidden}
+#ctrls button{width:40px;height:40px;border:0;background:var(--panel-solid);color:var(--text);font-size:20px;cursor:pointer;display:grid;place-items:center}
+#ctrls button+button{border-top:1px solid var(--line)}
+#ctrls button:hover{background:#262a33}
+#compass svg{transition:transform .08s linear}
+#status{position:absolute;right:0;bottom:0;left:0;height:28px;display:flex;align-items:center;justify-content:flex-end;gap:18px;padding:0 14px;font-size:12px;color:var(--muted);background:rgba(10,11,14,.78);z-index:3;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+#status a{color:var(--muted)}
+#scale{display:flex;align-items:center;gap:6px}
+#scale i{display:block;height:6px;border:1px solid var(--muted);border-top:0}
+#credit{margin-right:auto;overflow:hidden;text-overflow:ellipsis}
+.hide{display:none!important}
+#chips{position:absolute;top:16px;right:16px;z-index:5;display:flex;gap:8px}
+.chip{display:flex;align-items:center;gap:7px;height:40px;padding:0 16px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:500 14px Inter,sans-serif;cursor:pointer;box-shadow:var(--shadow);backdrop-filter:blur(8px)}
+.chip:hover{background:#262a33}
+.chip.on{background:var(--accent);color:#0b1220;border-color:var(--accent)}
+.chip svg{flex:none}
+#icepanel{position:absolute;top:66px;right:16px;width:320px;max-width:calc(100vw - 32px);max-height:max(220px,calc(100vh - 360px));overflow:auto;padding:14px 16px;z-index:4}
+#icepanel h3{margin:0 0 8px;font-size:15px;font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.seg button{flex:1 1 45%;padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text);font:500 12px Inter,sans-serif;cursor:pointer;text-align:left;line-height:1.25}
+.seg button small{display:block;color:var(--muted);font-weight:400}
+.seg button.on{border-color:var(--accent);background:rgba(138,180,248,.14)}
+.seg button.on small{color:#c9d8f5}
+#icelegend{height:12px;border-radius:6px;margin:6px 0 2px}
+.legendticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+#icepanel ul{margin:10px 0 6px;padding-left:18px;color:#cfd6e0;font-size:12.5px}
+#icepanel li{margin:3px 0}
+#icepanel .cite{font-size:11.5px;color:var(--muted)}
+#icepanel .row{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;margin-top:8px}
+#icepanel input[type=range]{width:130px;accent-color:var(--accent)}
+#section{position:absolute;left:16px;right:72px;bottom:40px;z-index:6;padding:12px 16px 10px;display:none}
+#section.open{display:block}
+#section .head{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+#section .head b{font-size:14px}
+#section .head span{color:var(--muted);font-size:12.5px;flex:1}
+#section .head button.lnk{background:none;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:4px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
+#section svg{display:block;width:100%;height:230px}
+#section .keys{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:4px}
+#section .keys i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+#sechint{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:6;padding:7px 8px 7px 14px;font-size:13px;display:none;white-space:nowrap;align-items:center;gap:10px}
+#sechint button{background:none;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:4px 10px;font:500 12px Inter,sans-serif;cursor:pointer}
+#sechint.open{display:flex}
+#loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);z-index:10;pointer-events:none;transition:opacity .6s}
+@media (max-width:640px){
+  #search{width:auto;right:16px}
+  #info{top:auto;bottom:150px;left:16px;right:16px;width:auto;max-height:40vh}
+  .layerbtn{width:60px;height:60px}
+  #layers{flex-wrap:wrap;right:72px}
+  #opts{min-width:0;width:100%;order:-1;padding:8px 12px}
+  #credit{display:none}
+  #chips{top:72px}
+  .chip{height:36px;padding:0 12px;font-size:13px}
+  #icepanel{top:116px;max-height:45vh}
+  #section{right:16px;bottom:34px}
+  #section svg{height:180px}
+}
+</style>
+</head>
+<body>
+<div id="globe"></div>
+<div id="loading">Loading Enceladus…</div>
+
+<div id="search">
+  <div class="card bar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted)"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+    <input id="q" placeholder="Search Enceladus: craters, sulci, jets, high-res" autocomplete="off" spellcheck="false">
+    <button class="iconbtn" id="clearq" title="Clear" aria-label="Clear">✕</button>
+  </div>
+  <div class="card" id="results"></div>
+</div>
+
+<div class="card" id="info">
+  <button class="iconbtn close" id="infoclose" aria-label="Close">✕</button>
+  <div id="infobody"></div>
+</div>
+
+<div id="chips">
+  <button class="chip" id="chipIce" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2v20M5 5l14 14M19 5L5 19"/></svg>Ice thickness</button>
+  <button class="chip" id="chipSec" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M3 21h18"/></svg>Cross-section</button>
+</div>
+<div class="card hide" id="icepanel">
+  <h3>Ice shell thickness</h3>
+  <div class="seg" id="iceModels"></div>
+  <div id="icelegend"></div>
+  <div class="legendticks"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50 km</span></div>
+  <ul id="icenotes"></ul>
+  <div class="cite" id="icecite"></div>
+  <div class="row"><span>Layer opacity</span><input type="range" id="iceAlpha" min="0.2" max="1" step="0.05" value="0.75"></div>
+  <p class="cite" style="margin:10px 0 0">A model, not a measurement: nobody has seen the base of the ice. Contour lines every 5 km. Only features larger than about 200 km are resolved.</p>
+</div>
+<div class="card" id="sechint"><span id="sechintText">Click two points on the moon to slice through it</span><button id="secPreset2">or try South pole &rarr; equator</button></div>
+<div class="card" id="section">
+  <div class="head"><b>Cross-section</b><span id="secinfo"></span>
+    <button class="lnk" id="secPreset">South pole &rarr; equator</button>
+    <button class="lnk" id="secNew">New line</button>
+    <button class="iconbtn" id="secClose" aria-label="Close">&#10005;</button></div>
+  <svg id="secsvg" role="img" aria-label="Cross-section through the ice shell and ocean"></svg>
+  <div class="keys"><span><i style="background:#e8f1f8"></i>Ice shell</span><span><i style="background:#2a6fb5"></i>Ocean</span><span><i style="background:#8a6a4e"></i>Rocky core</span><span><i style="background:#ff9a3c"></i>Plume jet sources nearby</span><span id="secmodel"></span></div>
+</div>
+<div id="layers">
+  <button class="layerbtn active" data-layer="mosaic"><img src="tiles/mosaic/0/1/0.jpg" alt=""><span>Imagery</span></button>
+  <button class="layerbtn" data-layer="relief"><img src="tiles/relief/0/1/0.jpg" alt=""><span>Topography</span></button>
+  <button class="layerbtn" data-layer="hybrid"><img src="tiles/mosaic/0/0/0.jpg" alt=""><span>Hybrid</span></button>
+  <div class="card" id="opts">
+    <label><input type="checkbox" id="optLabels" checked> Feature names</label>
+    <label><input type="checkbox" id="optJets" checked> Plume jet sources (100)</label>
+    <label id="optHiresRow"><input type="checkbox" id="optHires" checked> High-res Cassini areas</label>
+    <label><input type="checkbox" id="optGrid"> Latitude / longitude grid</label>
+    <div class="row"><span>Terrain exaggeration</span><span id="exagv">4×</span></div>
+    <input type="range" id="exag" min="0" max="20" step="0.5" value="4">
+  </div>
+</div>
+
+<div id="ctrls">
+  <div class="grp card"><button id="compass" title="Reset north and tilt"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 2l4 10h-8z" fill="#ea4335"/><path d="M12 22l-4-10h8z" fill="#cfd6e0"/></svg></button></div>
+  <div class="grp card"><button id="tilt" title="Tilt view">3D</button></div>
+  <div class="grp card"><button id="zin" title="Zoom in">+</button><button id="zout" title="Zoom out">−</button></div>
+  <div class="grp card"><button id="home" title="Whole moon">⌂</button></div>
+</div>
+
+<div id="status">
+  <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
+  <span id="scale"><i></i><span></span></span>
+  <span id="cursor">—</span>
+  <span id="cam"></span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.123.0/Cesium.js"></script>
+<script src="features.js"></script>
+<script src="hires.js" onerror="window.ENC_HIRES=null"></script>
+<script src="interior.js" onerror="window.ENC_INTERIOR=null"></script>
+<script>
+(() => {
+const C = Cesium;
+// Display sphere. Terrain heights carry the triaxial shape and DEM relief on top of it.
+const R = 252100;
+const E = new C.Ellipsoid(R, R, R);
+C.Ellipsoid.default = E;
+const TS = new C.GeographicTilingScheme({ ellipsoid: E });
+
+// Reference ellipsoid of the Schenk & McKinnon (2024) DEM, long axis at 4.15 W.
+const A = 256200, B = 251400, Cc = 248600, AX = -4.15 * Math.PI / 180;
+function ellR(lat, lon) {
+  const cl = Math.cos(lat), d = lon - AX;
+  return 1 / Math.sqrt((cl * Math.cos(d) / A) ** 2 + (cl * Math.sin(d) / B) ** 2 + (Math.sin(lat) / Cc) ** 2);
+}
+
+// ---------- terrain ----------
+const MAXT = 5, N = 65, cache = new Map();
+function loadT(x, y, z) {
+  const k = z + '/' + x + '/' + y;
+  if (!cache.has(k)) cache.set(k, fetch('terrain/' + k + '.bin').then(r => r.arrayBuffer()).then(b => new Int16Array(b)));
+  return cache.get(k);
+}
+const terrain = new C.CustomHeightmapTerrainProvider({
+  width: N, height: N, tilingScheme: TS, ellipsoid: E,
+  callback: (x, y, z) => {
+    if (z <= MAXT) return loadT(x, y, z).then(a => Float32Array.from(a));
+    const s = 1 << (z - MAXT), px = Math.floor(x / s), py = Math.floor(y / s), ox = x % s, oy = y % s;
+    return loadT(px, py, MAXT).then(a => {
+      const out = new Float32Array(N * N), f = (N - 1) / s;
+      for (let j = 0; j < N; j++) {
+        const v = oy * f + j * f / (N - 1), j0 = Math.min(Math.floor(v), N - 2), tv = v - j0;
+        for (let i = 0; i < N; i++) {
+          const u = ox * f + i * f / (N - 1), i0 = Math.min(Math.floor(u), N - 2), tu = u - i0;
+          const a00 = a[j0 * N + i0], a01 = a[j0 * N + i0 + 1], a10 = a[(j0 + 1) * N + i0], a11 = a[(j0 + 1) * N + i0 + 1];
+          out[j * N + i] = (a00 * (1 - tu) + a01 * tu) * (1 - tv) + (a10 * (1 - tu) + a11 * tu) * tv;
+        }
+      }
+      return out;
+    });
+  }
+});
+
+// ---------- viewer ----------
+const viewer = new C.Viewer('globe', {
+  globe: new C.Globe(E), mapProjection: new C.GeographicProjection(E), terrainProvider: terrain,
+  baseLayer: false, baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false,
+  navigationHelpButton: false, animation: false, timeline: false, fullscreenButton: false,
+  infoBox: false, selectionIndicator: false, skyAtmosphere: false, msaaSamples: 4,
+});
+const scene = viewer.scene, globe = scene.globe, camera = scene.camera;
+globe.showGroundAtmosphere = false; globe.enableLighting = false; globe.baseColor = C.Color.fromCssColorString('#1b1d22');
+globe.maximumScreenSpaceError = 1.5; globe.depthTestAgainstTerrain = true; globe.tileCacheSize = 400;
+scene.fog.enabled = false; if (scene.sun) scene.sun.show = false; if (scene.moon) scene.moon.show = false;
+scene.verticalExaggeration = 4;
+const ssc = scene.screenSpaceCameraController;
+ssc.minimumZoomDistance = 800; ssc.maximumZoomDistance = 6e6;
+ssc.inertiaZoom = 0.85;
+
+// ---------- free trackball rotation and moving the globe on screen ----------
+// Cesium's own left-drag spin keeps north up, stops at the poles and jumps near the limb.
+// Here: drag on the moon rotates it freely in any direction, over the poles and on and on,
+// with smoothing and inertia. Drag in empty space (or Shift+drag) moves the whole globe
+// around the screen; it is never allowed to leave the screen.
+camera.constrainedAxis = undefined;
+ssc.enableRotate = false; ssc.enableLook = false;
+const ORIGIN = C.Cartesian3.ZERO;
+const focalPx = () => (scene.canvas.clientHeight / 2) / Math.tan(camera.frustum.fovy / 2);
+const drag = { mode: null, x: 0, y: 0, k: 0, pendX: 0, pendY: 0, velX: 0, velY: 0, id: null };
+function hitsGlobe(x, y) {
+  // Terrain pick when tiles are loaded, else the display sphere, so a grab on the moon always spins it.
+  const w = new C.Cartesian2(x, y), r = camera.getPickRay(w);
+  return (r && globe.pick(r, scene)) || camera.pickEllipsoid(w, E);
+}
+function rotateBy(dx, dy, k) {
+  // Turn the moon so the surface follows the pointer: right-drag turns it to the right.
+  if (dx) camera.rotate(camera.up, dx * k);
+  if (dy) camera.rotate(camera.right, dy * k);
+}
+function shiftScreen(dx, dy) {
+  // Move the globe's image dx px right and dy px down by turning the camera in place.
+  const f = focalPx();
+  if (dx) camera.look(camera.up, -Math.atan(dx / f));
+  if (dy) camera.look(camera.right, -Math.atan(dy / f));
+}
+function discOnScreen() {
+  const d = C.Cartesian3.magnitude(camera.positionWC);
+  const toC = C.Cartesian3.normalize(C.Cartesian3.negate(camera.positionWC, new C.Cartesian3()), new C.Cartesian3());
+  if (C.Cartesian3.dot(toC, camera.directionWC) <= 0.05) return null;
+  const p = C.SceneTransforms.worldToWindowCoordinates(scene, ORIGIN);
+  if (!p) return null;
+  return { x: p.x, y: p.y, r: focalPx() * Math.tan(Math.asin(Math.min(1, R / d))), d };
+}
+function clampDisc() {
+  // Keep the whole disc on screen when it fits; when it is bigger than the screen, keep it covering the middle.
+  const c = discOnScreen(); if (!c) return;
+  const w = scene.canvas.clientWidth, h = scene.canvas.clientHeight, m = 8;
+  const lim = (v, r, size) => r * 2 + 2 * m <= size ? Math.min(Math.max(v, r + m), size - r - m) : Math.min(Math.max(v, size - r), r);
+  const sb = 28; // status bar
+  const cx = lim(c.x, c.r, w), cy = lim(c.y, c.r, h - sb);
+  if (Math.abs(cx - c.x) > 0.5 || Math.abs(cy - c.y) > 0.5) shiftScreen(cx - c.x, cy - c.y);
+}
+const cv = scene.canvas;
+cv.addEventListener('pointerdown', e => {
+  if (e.button !== 0 || e.ctrlKey || e.altKey || drag.id !== null) return;
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  const hit = !e.shiftKey && hitsGlobe(x, y);
+  camera.cancelFlight();
+  drag.mode = hit ? 'spin' : 'move'; drag.x = x; drag.y = y; drag.id = e.pointerId;
+  // A press is a click until the pointer travels a few pixels, so clicks never nudge the globe.
+  drag.x0 = x; drag.y0 = y; drag.armed = false; drag.slop = e.pointerType === 'mouse' ? 5 : 10;
+  drag.velX = drag.velY = 0; drag.pendX = drag.pendY = 0;
+  const dist = hit ? C.Cartesian3.distance(camera.positionWC, hit) : C.Cartesian3.magnitude(camera.positionWC) - R;
+  drag.k = Math.max(dist, 200) / (R * focalPx());
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+});
+cv.addEventListener('pointermove', e => {
+  if (e.pointerId !== drag.id) return;
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (!drag.armed) {
+    if (Math.hypot(x - drag.x0, y - drag.y0) < drag.slop) return;
+    drag.armed = true; drag.x = drag.x0; drag.y = drag.y0;
+    cv.style.cursor = 'grabbing';
+  }
+  drag.pendX += x - drag.x; drag.pendY += y - drag.y; drag.x = x; drag.y = y; drag.t = performance.now();
+});
+const endDrag = e => {
+  if (e.pointerId !== drag.id) return;
+  drag.id = null; cv.style.cursor = '';
+  if (!drag.armed) { drag.mode = null; drag.velX = drag.velY = 0; return; }
+  // Coast only if the pointer was still moving when released, and never faster than 25 px per frame.
+  const v = Math.hypot(drag.velX, drag.velY), cap = 25;
+  if (drag.mode === 'spin' && performance.now() - (drag.t || 0) < 90 && v > 0.3) {
+    if (v > cap) { drag.velX *= cap / v; drag.velY *= cap / v; }
+    drag.mode = 'coast';
+  } else if (drag.mode === 'spin') { drag.velX = drag.velY = 0; drag.mode = 'coast'; }
+  writeHash();
+};
+cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+// Two-finger touch belongs to Cesium's pinch zoom and tilt.
+cv.addEventListener('touchstart', e => { if (e.touches.length > 1) { drag.id = null; drag.mode = null; drag.pendX = drag.pendY = 0; } }, { passive: true });
+scene.preRender.addEventListener(() => {
+  if (drag.mode === 'spin' || drag.mode === 'move') {
+    // Ease toward the pointer instead of jumping: apply half of what is pending each frame.
+    const sx = drag.pendX * 0.5, sy = drag.pendY * 0.5;
+    drag.pendX -= sx; drag.pendY -= sy;
+    if (drag.mode === 'spin') { rotateBy(sx, sy, drag.k); drag.velX = drag.velX * 0.7 + sx * 0.3; drag.velY = drag.velY * 0.7 + sy * 0.3; }
+    else shiftScreen(sx, sy);
+    if (drag.id === null && drag.mode === 'move') drag.mode = null;
+  } else if (drag.mode === 'coast') {
+    rotateBy(drag.velX + drag.pendX * 0.5, drag.velY + drag.pendY * 0.5, drag.k);
+    drag.pendX *= 0.5; drag.pendY *= 0.5; drag.velX *= 0.92; drag.velY *= 0.92;
+    if (Math.hypot(drag.velX, drag.velY) < 0.05 && Math.hypot(drag.pendX, drag.pendY) < 0.2) { drag.mode = null; writeHash(); }
+  }
+  clampDisc();
+});
+
+const mk = (name, max) => new C.UrlTemplateImageryProvider({ url: 'tiles/' + name + '/{z}/{x}/{y}.jpg', tilingScheme: TS, maximumLevel: max, tileWidth: 256, tileHeight: 256 });
+const mosaic = viewer.imageryLayers.addImageryProvider(mk('mosaic', __MOSAIC_MAX__));
+const relief = viewer.imageryLayers.addImageryProvider(mk('relief', __RELIEF_MAX__));
+relief.show = false;
+
+// High-resolution Cassini insets: extra zoom levels only where they exist, transparent elsewhere.
+const HI = window.ENC_HIRES;
+let hires = null;
+if (HI && HI.tiles.length) {
+  const have = new Set(HI.tiles), blank = document.createElement('canvas'); blank.width = blank.height = 1;
+  const maxHi = Math.max(...HI.tiles.map(k => +k.split('/')[0]));
+  const hp = new C.UrlTemplateImageryProvider({ url: 'tiles/hires/{z}/{x}/{y}.webp?v=' + (HI.version || 0), tilingScheme: TS, maximumLevel: maxHi, tileWidth: 256, tileHeight: 256, hasAlphaChannel: true,
+    rectangle: C.Rectangle.fromDegrees(-180, -90, 180, -60) });
+  const req = hp.requestImage.bind(hp);
+  hp.requestImage = (x, y, l, r) => have.has(l + '/' + x + '/' + y) ? req(x, y, l, r) : Promise.resolve(blank);
+  hires = viewer.imageryLayers.addImageryProvider(hp, 1);
+} else document.getElementById('optHiresRow').classList.add('hide');
+const grid = viewer.imageryLayers.addImageryProvider(new C.GridImageryProvider({ tilingScheme: TS, cells: 2, color: C.Color.fromCssColorString('rgba(138,180,248,0.55)'), glowColor: C.Color.TRANSPARENT, backgroundColor: C.Color.TRANSPARENT, glowWidth: 0 }));
+grid.show = false;
+
+function setLayer(name) {
+  mosaic.show = name !== 'relief'; relief.show = name !== 'mosaic';
+  if (hires) hires.show = mosaic.show && document.getElementById('optHires').checked; relief.alpha = name === 'hybrid' ? 0.45 : 1;
+  document.querySelectorAll('.layerbtn').forEach(b => b.classList.toggle('active', b.dataset.layer === name));
+  state.layer = name; writeHash();
+}
+
+// ---------- labels and jets ----------
+const feats = window.ENC_FEATURES, jets = window.ENC_JETS;
+const STRIPES = new Set(['Alexandria Sulcus', 'Cairo Sulcus', 'Baghdad Sulcus', 'Damascus Sulcus']);
+const labelSrc = new C.CustomDataSource('labels'), jetSrc = new C.CustomDataSource('jets');
+viewer.dataSources.add(labelSrc); viewer.dataSources.add(jetSrc);
+const typeColor = { Crater: '#ffffff', Sulcus: '#7ee2ff', Fossa: '#ffb48a', Planitia: '#c7f59a', Dorsum: '#e6b8ff', Rupes: '#ffd36b' };
+feats.forEach(f => {
+  f.kind = 'feature';
+  const big = f.type === 'Planitia' || STRIPES.has(f.name);
+  const far = big ? 2.2e6 : Math.max(f.diameter_km * 1000 * 7, 250e3);
+  f.entity = labelSrc.entities.add({
+    position: C.Cartesian3.fromDegrees(f.lon, f.lat, 0, E),
+    point: { pixelSize: f.type === 'Crater' ? 8 : 9, color: C.Color.fromCssColorString(typeColor[f.type] || '#fff'), outlineColor: C.Color.BLACK, outlineWidth: 1.5, eyeOffset: new C.Cartesian3(0, 0, -3000), distanceDisplayCondition: new C.DistanceDisplayCondition(0, far) },
+    label: { text: f.name, font: (big ? '600 15px' : '500 13px') + ' Inter, sans-serif', fillColor: C.Color.fromCssColorString(STRIPES.has(f.name) ? '#7ee2ff' : '#f2f4f8'), outlineColor: C.Color.fromCssColorString('#000000cc'), outlineWidth: 3, style: C.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new C.Cartesian2(0, -14), eyeOffset: new C.Cartesian3(0, 0, -3000), distanceDisplayCondition: new C.DistanceDisplayCondition(0, far) },
+    properties: { ref: f },
+  });
+});
+jets.forEach(j => {
+  j.kind = 'jet'; j.name = j.id.replace('Jet', 'Jet ');
+  j.entity = jetSrc.entities.add({
+    position: C.Cartesian3.fromDegrees(j.lon, j.lat, 0, E),
+    point: { pixelSize: 9, color: C.Color.fromCssColorString('#ffd36b').withAlpha(.95), outlineColor: C.Color.fromCssColorString('#ff7a00'), outlineWidth: 2, eyeOffset: new C.Cartesian3(0, 0, -3000), distanceDisplayCondition: new C.DistanceDisplayCondition(0, 1.6e6), scaleByDistance: new C.NearFarScalar(2e4, 1.3, 1.2e6, .6) },
+    properties: { ref: j },
+  });
+});
+const areaSrc = new C.CustomDataSource('hires'); viewer.dataSources.add(areaSrc);
+const AREA_NAMES = { wide: 'South polar high-res mosaic', detail_01: 'Pole close-up (10 m)', detail_02: 'Tiger stripe close-up (10 m)' };
+const areas = (HI && HI.areas || []).map(a => {
+  const o = { ...a, kind: 'area', id: 'hires-' + a.name, name: AREA_NAMES[a.name] || ('High-res ' + a.name), type: 'High-res Cassini imagery', diameter_km: Math.sqrt(a.km2) };
+  const col = C.Color.fromCssColorString(a.spacing_m <= 12 ? '#ff9de2' : '#ffd36b');
+  o.lines = a.rings.map(ring => areaSrc.entities.add({
+    polyline: { positions: new C.CallbackProperty(() => ring.map(([la, lo, h]) => C.Cartesian3.fromDegrees(lo, la, h * scene.verticalExaggeration + 250, E)), false),
+      width: 2, material: col.withAlpha(.9), depthFailMaterial: col.withAlpha(.35), arcType: C.ArcType.NONE },
+    properties: { ref: o },
+  }));
+  o.entity = areaSrc.entities.add({
+    position: C.Cartesian3.fromDegrees(a.lon, a.lat, 0, E),
+    label: { text: o.name + ' · ' + a.spacing_m + ' m', font: '600 13px Inter, sans-serif', fillColor: col, outlineColor: C.Color.fromCssColorString('#000000cc'), outlineWidth: 3, style: C.LabelStyle.FILL_AND_OUTLINE, eyeOffset: new C.Cartesian3(0, 0, -3000), distanceDisplayCondition: new C.DistanceDisplayCondition(0, a.name === 'wide' ? 1.2e6 : 300e3) },
+    properties: { ref: o },
+  });
+  return o;
+});
+// Keep markers on the surface: they need the exaggerated terrain height.
+async function placeOnTerrain() {
+  const all = [...feats, ...jets, ...areas];
+  const carto = all.map(o => C.Cartographic.fromDegrees(o.lon, o.lat));
+  try { await C.sampleTerrain(terrain, 4, carto); } catch (e) { console.warn(e); return; }
+  all.forEach((o, i) => { o.h = carto[i].height; });
+  updateHeights();
+}
+function updateHeights() {
+  const ex = scene.verticalExaggeration;
+  [...feats, ...jets, ...areas].forEach(o => { if (o.h !== undefined) o.entity.position = C.Cartesian3.fromDegrees(o.lon, o.lat, o.h * ex + 300, E); });
+}
+
+// ---------- info panel ----------
+const fmt = (v, d = 2) => Math.abs(v).toFixed(d) + '°' ;
+const ll = (lat, lon) => fmt(lat) + (lat >= 0 ? 'N' : 'S') + ', ' + fmt(lon) + (lon >= 0 ? 'E' : 'W');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function demHeight(o) { return o.h === undefined ? null : (R + o.h) - ellR(o.lat * Math.PI / 180, o.lon * Math.PI / 180); }
+function showInfo(o) {
+  const el = document.getElementById('infobody'); let h;
+  const dh = demHeight(o);
+  if (o.kind === 'area') {
+    const fl = o.dates.map(d => new Date(d + 'T00:00:00Z').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }));
+    h = `<h2>${esc(o.name)}</h2><div class="type">High-resolution Cassini imagery</div>
+      <dl><dt>Detail</dt><dd>${o.spacing_m} m per pixel (global map: 100 m)</dd>
+      <dt>Area</dt><dd>${o.km2.toLocaleString()} km²</dd>
+      <dt>Center</dt><dd>${ll(o.lat, o.lon)}</dd>
+      <dt>Frames</dt><dd>${o.frames.length} Cassini ISS narrow-angle</dd>
+      <dt>Flybys</dt><dd>${fl.map(esc).join('<br>')}</dd></dl>
+      <p>Zoom in inside the outline for the sharper view. Each frame was matched to the global mosaic, so placement is good to about 100 m. The fine detail is real imagery; heights underneath stay at the DEM's 400 m. Shadows come from a low Sun on each flyby date.</p>
+      <a href="https://pds-rings.seti.org/search/" target="_blank" rel="noopener">Source frames: PDS Ring-Moon Systems Node ↗</a>`;
+  } else if (o.kind === 'jet') {
+    h = `<h2>${esc(o.name)}</h2><div class="type">Plume jet source · ${esc(o.sulcus)} Sulcus</div>
+      <dl><dt>Location</dt><dd>${ll(o.lat, o.lon)}</dd>
+      ${dh !== null ? `<dt>Elevation</dt><dd>${(dh / 1000).toFixed(2)} km vs. reference ellipsoid</dd>` : ''}
+      <dt>Tilt from vertical</dt><dd>${o.tilt == null ? 'not given' : o.tilt + '°'}</dd>
+      <dt>Relative sightings</dt><dd>${o.sightings}</dd>
+      <dt>Confidence</dt><dd>${esc(o.confidence.replace(/_/g, ' '))}</dd></dl>
+      <p>One of 100 jet sources triangulated from Cassini images by Porco et al. (2014), Astronomical Journal 148:45. Other teams read the same activity as curtain eruptions along the fractures.</p>`;
+  } else {
+    h = `<h2>${esc(o.name)}${STRIPES.has(o.name) ? '<span class="pill">tiger stripe</span>' : ''}</h2><div class="type">${esc(o.type)}</div>
+      <dl><dt>Center</dt><dd>${ll(o.lat, o.lon)}</dd>
+      <dt>Size</dt><dd>${o.diameter_km ? o.diameter_km.toFixed(1) + ' km' : '—'}</dd>
+      ${dh !== null ? `<dt>Elevation</dt><dd>${(dh / 1000).toFixed(2)} km vs. reference ellipsoid</dd>` : ''}</dl>
+      <p><b>Name origin:</b> ${esc(o.origin)}</p>
+      <a href="${esc(o.link)}" target="_blank" rel="noopener">USGS Gazetteer entry ↗</a>`;
+  }
+  h += `<div style="margin-top:14px"><button class="zoombtn" id="zoomhere">Zoom here</button></div>`;
+  el.innerHTML = h; document.getElementById('info').classList.add('open');
+  document.getElementById('zoomhere').onclick = () => flyTo(o, false);
+  state.sel = o.kind === 'feature' ? o.name : o.id; writeHash();
+}
+function closeInfo() { document.getElementById('info').classList.remove('open'); state.sel = null; markSelected(null); writeHash(); }
+document.getElementById('infoclose').onclick = closeInfo;
+
+function flyTo(o, now) {
+  const range = o.kind === 'jet' ? 35e3 : o.kind === 'area' ? Math.min(Math.sqrt(o.km2) * 1000 * 2.2, 380e3) : Math.min(Math.max((o.diameter_km || 30) * 1000 * 2.4, 45e3), 420e3);
+  const target = C.Cartesian3.fromDegrees(o.lon, o.lat, (o.h || 0) * scene.verticalExaggeration, E);
+  const hpr = new C.HeadingPitchRange(0, C.Math.toRadians(range > 250e3 ? -70 : -48), range);
+  if (now) camera.lookAt(target, hpr), camera.lookAtTransform(C.Matrix4.IDENTITY);
+  else camera.flyToBoundingSphere(new C.BoundingSphere(target, 1), { offset: hpr, duration: 2.2 });
+  markSelected(o); showInfo(o);
+}
+
+const handler = new C.ScreenSpaceEventHandler(scene.canvas);
+// Find the marker nearest the pointer within a generous box, so small dots are easy to hit.
+const HIT_PX = 26;
+function pickMarker(pos) {
+  let picks;
+  try { picks = scene.drillPick(pos, 12, HIT_PX, HIT_PX); } catch (_) { picks = [scene.pick(pos)].filter(Boolean); }
+  let best = null, bestD = Infinity;
+  for (const p of picks) {
+    const ent = p && p.id; if (!ent || !ent.properties || !ent.properties.ref) continue;
+    const o = ent.properties.ref.getValue();
+    let d = HIT_PX;  // outlines and other shapes rank behind any dot
+    const wp = ent.position && C.SceneTransforms.worldToWindowCoordinates(scene, ent.position.getValue(C.JulianDate.now()));
+    if (wp && ent.point) d = Math.hypot(wp.x - pos.x, wp.y - pos.y);
+    if (d < bestD) { bestD = d; best = o; }
+  }
+  return best;
+}
+let selected = null, hovered = null;
+const SEL_OUTLINE = C.Color.fromCssColorString('#8ab4f8');
+function refreshDot(o) {
+  // One place decides a dot's look: bigger when hovered, bigger and blue-ringed when selected.
+  const pt = o && o.entity && o.entity.point; if (!pt) return;
+  if (o._base === undefined) { o._base = pt.pixelSize.getValue(); o._ring = pt.outlineColor.getValue(); }
+  pt.pixelSize = o._base + (o === selected ? 5 : o === hovered ? 4 : 0);
+  pt.outlineColor = o === selected ? SEL_OUTLINE : o._ring;
+}
+function markSelected(o) { const old = selected; selected = o; refreshDot(old); refreshDot(o); }
+handler.setInputAction(e => {
+  if (section.picking) { section.addPoint(e.position); return; }
+  const o = pickMarker(e.position);
+  if (o) { markSelected(o); showInfo(o); }   // just open the details; the view stays where it is
+}, C.ScreenSpaceEventType.LEFT_CLICK);
+
+// Double-click always zooms in toward the spot under the pointer, like a web map.
+viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(C.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+handler.setInputAction(e => {
+  const ray = camera.getPickRay(e.position); if (!ray) return;
+  const target = globe.pick(ray, scene) || camera.pickEllipsoid(e.position, E); if (!target) return;
+  const dist = C.Cartesian3.distance(camera.positionWC, target);
+  const step = Math.min(dist * 0.55, Math.max(dist - ssc.minimumZoomDistance, 0));
+  if (step <= 0) return;
+  // Moving straight along the pointer's ray keeps the clicked spot under the pointer.
+  const dest = C.Cartesian3.add(camera.positionWC, C.Cartesian3.multiplyByScalar(ray.direction, step, new C.Cartesian3()), new C.Cartesian3());
+  camera.cancelFlight(); drag.mode = null;
+  camera.flyTo({ destination: dest, orientation: { direction: C.Cartesian3.clone(camera.directionWC), up: C.Cartesian3.clone(camera.upWC) }, duration: 0.6, easingFunction: C.EasingFunction.QUADRATIC_OUT });
+}, C.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
+// ---------- cursor readout ----------
+const cursorEl = document.getElementById('cursor');
+let lastMove = 0;
+function setHover(o) {
+  if (o === hovered) return;
+  const old = hovered; hovered = o; refreshDot(old); refreshDot(o);
+  cv.style.cursor = o ? 'pointer' : '';
+}
+handler.setInputAction(e => {
+  const t = performance.now(); if (drag.id !== null || t - lastMove < 60) return; lastMove = t;
+  setHover(pickMarker(e.endPosition));
+  const ray = camera.getPickRay(e.endPosition); const p = ray && globe.pick(ray, scene);
+  if (!p) { cursorEl.textContent = '—'; return; }
+  const c = E.cartesianToCartographic(p); if (!c) return;
+  const lat = c.latitude, lon = c.longitude, ex = scene.verticalExaggeration || 1;
+  const r = R + c.height / (ex || 1);
+  const dh = ex > 0 ? (r - ellR(lat, lon)) / 1000 : null;
+  let txt = ll(lat * 180 / Math.PI, lon * 180 / Math.PI) + (dh !== null ? '  ·  ' + (dh >= 0 ? '+' : '') + dh.toFixed(2) + ' km' : '');
+  if (ice.on && INT && ice.model) { const col = interiorAt(lat * 180 / Math.PI, lon * 180 / Math.PI, ice.model); txt += `  ·  ice ≈ ${col.ice.toFixed(0)} km, ocean ≈ ${col.ocean.toFixed(0)} km`; }
+  cursorEl.textContent = txt;
+}, C.ScreenSpaceEventType.MOUSE_MOVE);
+
+// ---------- search ----------
+const q = document.getElementById('q'), res = document.getElementById('results');
+const index = [...areas, ...feats, ...jets];
+let hits = [], selI = 0;
+function render() {
+  const s = q.value.trim().toLowerCase();
+  if (!s) { res.classList.remove('open'); return; }
+  hits = index.filter(o => o.name.toLowerCase().includes(s) || (o.type || o.sulcus || '').toLowerCase().includes(s) || (o.kind === 'area' && /hi|res|detail|cassini/.test(s)))
+    .sort((a, b) => (b.name.toLowerCase().startsWith(s)) - (a.name.toLowerCase().startsWith(s)) || (b.diameter_km || 0) - (a.diameter_km || 0)).slice(0, 30);
+  selI = 0;
+  res.innerHTML = hits.length ? hits.map((o, i) => `<button data-i="${i}" class="${i === 0 ? 'sel' : ''}"><span>${esc(o.name)}</span><small>${o.kind === 'jet' ? 'Jet · ' + esc(o.sulcus) : o.kind === 'area' ? 'High-res · ' + o.spacing_m + ' m' : esc(o.type)} · ${ll(o.lat, o.lon)}</small></button>`).join('')
+    : '<div style="padding:8px 14px;color:var(--muted)">No named feature matches.</div>';
+  res.classList.add('open');
+}
+q.addEventListener('input', render);
+q.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); selI = (selI + (e.key === 'ArrowDown' ? 1 : -1) + hits.length) % hits.length; res.querySelectorAll('button').forEach((b, i) => b.classList.toggle('sel', i === selI)); }
+  if (e.key === 'Enter' && hits[selI]) { pick(hits[selI]); }
+  if (e.key === 'Escape') { res.classList.remove('open'); q.blur(); }
+});
+res.addEventListener('click', e => { const b = e.target.closest('button'); if (b) pick(hits[+b.dataset.i]); });
+function pick(o) { q.value = o.name; res.classList.remove('open'); flyTo(o, false); }
+document.getElementById('clearq').onclick = () => { q.value = ''; render(); closeInfo(); };
+
+// ---------- options ----------
+document.querySelectorAll('.layerbtn').forEach(b => b.onclick = () => setLayer(b.dataset.layer));
+document.getElementById('optLabels').onchange = e => { labelSrc.show = e.target.checked; };
+document.getElementById('optJets').onchange = e => { jetSrc.show = e.target.checked; };
+document.getElementById('optHires').onchange = e => { areaSrc.show = e.target.checked; if (hires) hires.show = e.target.checked && mosaic.show; };
+document.getElementById('optGrid').onchange = e => { grid.show = e.target.checked; };
+const exag = document.getElementById('exag');
+exag.oninput = () => { scene.verticalExaggeration = +exag.value; document.getElementById('exagv').textContent = exag.value + '×'; updateHeights(); state.ex = +exag.value; writeHash(); };
+
+// ---------- camera controls ----------
+const HOME = { lon: 0, lat: -20, alt: 1.15e6 };
+function home() { camera.flyTo({ destination: C.Cartesian3.fromDegrees(HOME.lon, HOME.lat, HOME.alt, E), orientation: { heading: 0, pitch: -Math.PI / 2, roll: 0 }, duration: 1.6 }); }
+document.getElementById('home').onclick = home;
+document.getElementById('zin').onclick = () => camera.zoomIn(camera.positionCartographic.height * 0.45);
+document.getElementById('zout').onclick = () => camera.zoomOut(camera.positionCartographic.height * 0.8);
+function centerPoint() {
+  const c = scene.canvas, ray = camera.getPickRay(new C.Cartesian2(c.clientWidth / 2, c.clientHeight / 2));
+  return (ray && globe.pick(ray, scene)) || null;
+}
+function orbitTo(pitchDeg, heading) {
+  // Re-centres the globe on screen too. Uses the point at screen centre, or the moon's centre if that misses.
+  let target = centerPoint(), range;
+  if (target) range = C.Cartesian3.distance(camera.positionWC, target);
+  else { target = C.Cartesian3.ZERO; range = C.Cartesian3.magnitude(camera.positionWC); pitchDeg = -90; }
+  camera.flyToBoundingSphere(new C.BoundingSphere(target, 1), { offset: new C.HeadingPitchRange(heading, C.Math.toRadians(pitchDeg), range), duration: 1.0 });
+}
+document.getElementById('compass').onclick = () => orbitTo(-90, 0);
+document.getElementById('tilt').onclick = () => orbitTo(C.Math.toDegrees(camera.pitch) < -75 ? -40 : -90, camera.heading);
+const needle = document.querySelector('#compass svg');
+
+// ---------- scale bar, hash ----------
+const scaleBar = document.querySelector('#scale i'), scaleTxt = document.querySelector('#scale span'), camEl = document.getElementById('cam');
+function updateScale() {
+  const c = scene.canvas, w = c.clientWidth, hgt = c.clientHeight;
+  const r1 = camera.getPickRay(new C.Cartesian2(w / 2, hgt - 40)), r2 = camera.getPickRay(new C.Cartesian2(w / 2 + 100, hgt - 40));
+  const p1 = r1 && globe.pick(r1, scene), p2 = r2 && globe.pick(r2, scene);
+  if (!p1 || !p2) { scaleBar.style.width = '0'; scaleTxt.textContent = ''; return; }
+  const mpp = C.Cartesian3.distance(p1, p2) / 100;
+  const nice = [100, 200, 500, 1e3, 2e3, 5e3, 1e4, 2e4, 5e4, 1e5, 2e5, 5e5].find(v => v / mpp >= 50) || 5e5;
+  scaleBar.style.width = Math.round(nice / mpp) + 'px'; scaleTxt.textContent = nice >= 1000 ? nice / 1000 + ' km' : nice + ' m';
+}
+const state = { layer: 'mosaic', ex: 4, sel: null };
+function writeHash() {
+  const c = camera.positionCartographic; if (!c) return;
+  const s = `#@${C.Math.toDegrees(c.latitude).toFixed(4)},${C.Math.toDegrees(c.longitude).toFixed(4)},${Math.round(c.height)}a,${C.Math.toDegrees(camera.heading).toFixed(1)}h,${C.Math.toDegrees(camera.pitch).toFixed(1)}t`
+    + `/l=${state.layer}/x=${state.ex}` + (state.sel ? '/f=' + encodeURIComponent(state.sel) : '');
+  history.replaceState(null, '', s);
+}
+function readHash() {
+  const m = location.hash.match(/@(-?[\d.]+),(-?[\d.]+),(\d+)a,(-?[\d.]+)h,(-?[\d.]+)t/);
+  const kv = Object.fromEntries((location.hash.split('/').slice(1)).map(p => p.split('=')).filter(p => p.length === 2));
+  if (kv.l && ['mosaic', 'relief', 'hybrid'].includes(kv.l)) setLayer(kv.l);
+  if (kv.x && isFinite(+kv.x)) { exag.value = kv.x; exag.oninput(); }
+  if (m) camera.setView({ destination: C.Cartesian3.fromDegrees(+m[2], +m[1], +m[3], E), orientation: { heading: C.Math.toRadians(+m[4]), pitch: C.Math.toRadians(+m[5]), roll: 0 } });
+  else camera.setView({ destination: C.Cartesian3.fromDegrees(HOME.lon, HOME.lat, HOME.alt * 2.2, E) });
+  if (kv.f) { const o = index.find(o => (o.kind === 'feature' ? o.name : o.id) === decodeURIComponent(kv.f)); if (o) setTimeout(() => showInfo(o), 600); }
+  return !!m;
+}
+camera.moveEnd.addEventListener(() => { writeHash(); updateScale(); });
+scene.postRender.addEventListener(() => {
+  needle.style.transform = `rotate(${-C.Math.toDegrees(camera.heading)}deg)`;
+  const c = camera.positionCartographic; camEl.textContent = 'Camera ' + (c.height / 1000).toFixed(c.height < 1e5 ? 1 : 0) + ' km';
+});
+
+const hadView = readHash();
+if (!hadView) home();
+placeOnTerrain().then(() => { if (state.sel) { const o = index.find(o => (o.kind === 'feature' ? o.name : o.id) === state.sel); if (o) showInfo(o); } });
+let shown = false;
+setTimeout(() => { const l = document.getElementById('loading'); if (l) { l.style.opacity = 0; setTimeout(() => l.remove(), 700); } shown = true; }, 8000);
+globe.tileLoadProgressEvent.addEventListener(n => { if (!shown && n === 0) { shown = true; const l = document.getElementById('loading'); l.style.opacity = 0; setTimeout(() => l.remove(), 700); updateScale(); } });
+// ---------- interior: ice thickness models and cross-section ----------
+const INT = window.ENC_INTERIOR;
+function gridAt(arr, lat, lon) {
+  // Bilinear on the 1 degree node grid (row 0 = 90 S, column 0 = 180 W).
+  const nl = INT.nlon, y = Math.min(Math.max(lat + 90, 0), 180), x = ((lon + 180) % 360 + 360) % 360;
+  const i0 = Math.min(Math.floor(y), 179), j0 = Math.min(Math.floor(x), 359), ty = y - i0, tx = x - j0;
+  const v = (i, j) => arr[i * nl + j];
+  return (v(i0, j0) * (1 - tx) + v(i0, j0 + 1) * tx) * (1 - ty) + (v(i0 + 1, j0) * (1 - tx) + v(i0 + 1, j0 + 1) * tx) * ty;
+}
+function interiorAt(lat, lon, m) {
+  const surf = (R + gridAt(INT.surface, lat, lon)) / 1000;   // km from the centre
+  const ice = Math.max(m.mean_km + m.k * (gridAt(INT.n_km, lat, lon) - m.n_mean_km), m.floor_km);
+  const ocean = Math.max(surf - ice - m.core_km, 0);
+  return { surf, ice, ocean, core: m.core_km };
+}
+const ice = { on: false, model: null, layer: null };
+const iceAlpha = document.getElementById('iceAlpha');
+function iceGradient() {
+  const st = INT.colors, max = 50;
+  return 'linear-gradient(90deg,' + st.map(([v, r, g, b]) => `rgb(${r},${g},${b}) ${(v / max * 100).toFixed(1)}%`).join(',') + ')';
+}
+function setIceModel(key) {
+  const m = INT.models.find(x => x.key === key) || INT.models[0];
+  ice.model = m;
+  document.querySelectorAll('#iceModels button').forEach(b => b.classList.toggle('on', b.dataset.key === m.key));
+  document.getElementById('icenotes').innerHTML = m.notes.map(n => `<li>${esc(n)}</li>`).join('');
+  document.getElementById('icecite').textContent = m.cite;
+  if (ice.layer) viewer.imageryLayers.remove(ice.layer, true);
+  ice.layer = viewer.imageryLayers.addImageryProvider(new C.UrlTemplateImageryProvider({
+    url: 'tiles/ice/' + m.key + '/{z}/{x}/{y}.png', tilingScheme: TS, maximumLevel: 3, tileWidth: 256, tileHeight: 256 }));
+  ice.layer.alpha = +iceAlpha.value; ice.layer.show = ice.on;
+  try { localStorage.setItem('encIceModel', m.key); } catch (_) {}
+  if (section.points.length === 2) section.draw();
+}
+function setIce(on) {
+  ice.on = on;
+  const chip = document.getElementById('chipIce');
+  chip.classList.toggle('on', on); chip.setAttribute('aria-pressed', on);
+  document.getElementById('icepanel').classList.toggle('hide', !on);
+  if (on && !ice.model) { let k = null; try { k = localStorage.getItem('encIceModel'); } catch (_) {} setIceModel(k); }
+  if (ice.layer) ice.layer.show = on;
+}
+
+// Cross-section: two clicks on the moon, a great-circle slice through ice, ocean and core.
+const secSrc = new C.CustomDataSource('section'); viewer.dataSources.add(secSrc);
+const $ = id => document.getElementById(id);
+const section = {
+  picking: false, points: [], samples: [],
+  isOpen() { return $('section').classList.contains('open'); },
+  setChip(on) { $('chipSec').classList.toggle('on', on); $('chipSec').setAttribute('aria-pressed', on); },
+  start() {
+    this.picking = true; this.points = []; secSrc.entities.removeAll();
+    $('section').classList.remove('open');
+    $('sechintText').textContent = 'Click two points on the moon to slice through it';
+    $('sechint').classList.add('open'); this.setChip(true);
+  },
+  stop() {
+    this.picking = false; this.points = []; secSrc.entities.removeAll();
+    $('sechint').classList.remove('open'); $('section').classList.remove('open'); this.setChip(false);
+  },
+  addPoint(pos) {
+    const ray = camera.getPickRay(pos);
+    const p = ray && (globe.pick(ray, scene) || camera.pickEllipsoid(pos, E)); if (!p) return;
+    const c = E.cartesianToCartographic(p);
+    const pt = { lat: C.Math.toDegrees(c.latitude), lon: C.Math.toDegrees(c.longitude) };
+    this.points.push(pt); this.mark(pt);
+    if (this.points.length === 1) $('sechintText').textContent = 'Now click the end point';
+    else { this.picking = false; $('sechint').classList.remove('open'); this.draw(); }
+  },
+  mark(pt) {
+    const h = gridAt(INT.surface, pt.lat, pt.lon);
+    secSrc.entities.add({
+      position: new C.CallbackProperty(() => C.Cartesian3.fromDegrees(pt.lon, pt.lat, h * scene.verticalExaggeration + 300, E), false),
+      point: { pixelSize: 11, color: C.Color.WHITE, outlineColor: C.Color.fromCssColorString('#8ab4f8'), outlineWidth: 3, eyeOffset: new C.Cartesian3(0, 0, -3000) } });
+  },
+  setLine(a, b) {
+    this.picking = false; this.points = [a, b]; secSrc.entities.removeAll(); this.mark(a); this.mark(b);
+    $('sechint').classList.remove('open'); this.setChip(true); this.draw();
+  },
+  sample() {
+    const [a, b] = this.points, toV = p => C.Cartesian3.normalize(C.Cartesian3.fromDegrees(p.lon, p.lat, 0, E), new C.Cartesian3());
+    const va = toV(a), vb = toV(b);
+    const ang = Math.acos(Math.min(1, Math.max(-1, C.Cartesian3.dot(va, vb)))), n = 360, out = [];
+    for (let i = 0; i <= n; i++) {
+      const t = i / n, s = Math.sin(ang);
+      const w1 = s > 1e-9 ? Math.sin((1 - t) * ang) / s : 1 - t, w2 = s > 1e-9 ? Math.sin(t * ang) / s : t;
+      const x = va.x * w1 + vb.x * w2, y = va.y * w1 + vb.y * w2, z = va.z * w1 + vb.z * w2;
+      out.push({ lat: C.Math.toDegrees(Math.asin(z / Math.hypot(x, y, z))), lon: C.Math.toDegrees(Math.atan2(y, x)), d: t * ang * R / 1000 });
+    }
+    return out;
+  },
+  draw() {
+    if (!INT || this.points.length < 2) return;
+    if (!ice.model) ice.model = INT.models[0];
+    const m = ice.model, S = this.sample(); this.samples = S;
+    S.forEach(s => Object.assign(s, interiorAt(s.lat, s.lon, m)));
+    secSrc.entities.removeById('secline');
+    secSrc.entities.add({ id: 'secline', polyline: {
+      positions: new C.CallbackProperty(() => S.map(s => C.Cartesian3.fromDegrees(s.lon, s.lat, (s.surf * 1000 - R) * scene.verticalExaggeration + 400, E)), false),
+      width: 3, material: C.Color.fromCssColorString('#8ab4f8'), depthFailMaterial: C.Color.fromCssColorString('#8ab4f8').withAlpha(.45), arcType: C.ArcType.NONE } });
+    $('section').classList.add('open');
+    const svg = $('secsvg'), W = svg.clientWidth || 800, H = svg.clientHeight || 230;
+    const L = 46, Rm = 12, T = 10, B = 26, D = S[S.length - 1].d || 1;
+    const top = Math.max(...S.map(s => s.surf)) + 4, bot = m.core_km - 14;
+    const X = d => L + d / D * (W - L - Rm), Y = r => T + (top - r) / (top - bot) * (H - T - B);
+    const pts = f => S.map(s => `${X(s.d).toFixed(1)},${Y(f(s)).toFixed(1)}`);
+    const band = (f, g) => 'M' + pts(f).join('L') + 'L' + pts(g).reverse().join('L') + 'Z';
+    let h = `<rect x="${L}" y="${T}" width="${W - L - Rm}" height="${H - T - B}" fill="#05070b"/>`;
+    h += `<path d="${band(() => m.core_km, () => bot)}" fill="#8a6a4e"/>`;
+    h += `<path d="${band(s => s.surf - s.ice, () => m.core_km)}" fill="#2a6fb5"/>`;
+    h += `<path d="${band(s => s.surf, s => s.surf - s.ice)}" fill="#e8f1f8"/>`;
+    h += `<path d="M${pts(s => s.surf).join('L')}" fill="none" stroke="#fff" stroke-width="1.2"/>`;
+    for (let r = Math.ceil(bot / 10) * 10; r <= top; r += 10)
+      h += `<line x1="${L}" x2="${W - Rm}" y1="${Y(r)}" y2="${Y(r)}" stroke="#ffffff22"/><text x="${L - 6}" y="${Y(r) + 4}" fill="#9aa4b2" font-size="11" text-anchor="end">${r}</text>`;
+    h += `<text x="12" y="${(T + H - B) / 2}" fill="#9aa4b2" font-size="11" transform="rotate(-90 12 ${(T + H - B) / 2})" text-anchor="middle">km from centre</text>`;
+    const step = [25, 50, 100, 200, 250, 500].find(v => D / v <= 8) || 500;
+    for (let d = 0; d <= D + 1e-6; d += step) h += `<text x="${X(d)}" y="${H - 8}" fill="#9aa4b2" font-size="11" text-anchor="middle">${d} km</text>`;
+    // Plume jet sources within 15 km of the line.
+    (window.ENC_JETS || []).forEach(j => {
+      let best = 1e9, bs = null;
+      S.forEach(s => { const dd = Math.hypot(s.lat - j.lat, ((s.lon - j.lon + 540) % 360 - 180) * Math.cos(s.lat * Math.PI / 180)) * Math.PI / 180 * R / 1000; if (dd < best) { best = dd; bs = s; } });
+      if (best < 15) h += `<path d="M${X(bs.d)},${Y(bs.surf) - 2}l-4,-8h8z" fill="#ff9a3c"/>`;
+    });
+    h += `<line id="secguide" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="#fff8" stroke-dasharray="3 3" visibility="hidden"/><text id="secread" x="0" y="${T + 14}" fill="#fff" font-size="12" visibility="hidden"></text>`;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = h;
+    const ices = S.map(s => s.ice), oceans = S.map(s => s.ocean);
+    $('secinfo').textContent = `${D.toFixed(0)} km long · ice ${Math.min(...ices).toFixed(0)}–${Math.max(...ices).toFixed(0)} km · ocean ${Math.min(...oceans).toFixed(0)}–${Math.max(...oceans).toFixed(0)} km`;
+    const ve = ((H - T - B) / (top - bot)) / ((W - L - Rm) / D);
+    $('secmodel').textContent = 'Model: ' + m.name + (ve > 1.15 ? ` · vertical scale stretched ×${ve.toFixed(1)}` : ve < 0.87 ? ` · vertical scale squeezed ×${ve.toFixed(2)}` : ' · true scale');
+    svg.onmousemove = e => {
+      const rc = svg.getBoundingClientRect(), x = (e.clientX - rc.left) * W / rc.width;
+      if (x < L || x > W - Rm) return;
+      const d = (x - L) / (W - L - Rm) * D, s = S.reduce((a, b) => Math.abs(b.d - d) < Math.abs(a.d - d) ? b : a);
+      const g = svg.querySelector('#secguide'), t = svg.querySelector('#secread');
+      g.setAttribute('x1', x); g.setAttribute('x2', x); g.setAttribute('visibility', 'visible');
+      t.textContent = `${s.d.toFixed(0)} km · ice ${s.ice.toFixed(1)} km · ocean ${s.ocean.toFixed(1)} km`;
+      t.setAttribute('x', Math.min(x + 8, W - 240)); t.setAttribute('visibility', 'visible');
+    };
+    svg.onmouseleave = () => { svg.querySelector('#secguide').setAttribute('visibility', 'hidden'); svg.querySelector('#secread').setAttribute('visibility', 'hidden'); };
+  },
+};
+
+if (INT) {
+  $('iceModels').innerHTML = INT.models.map(m =>
+    `<button data-key="${m.key}">${esc(m.name)}<small>avg ${m.mean_km} km · core ${m.core_km} km</small></button>`).join('');
+  document.querySelectorAll('#iceModels button').forEach(b => b.onclick = () => setIceModel(b.dataset.key));
+  $('icelegend').style.background = iceGradient();
+  $('chipIce').onclick = () => setIce(!ice.on);
+  iceAlpha.oninput = () => { if (ice.layer) ice.layer.alpha = +iceAlpha.value; };
+  $('chipSec').onclick = () => (section.picking || section.isOpen()) ? section.stop() : section.start();
+  $('secClose').onclick = () => section.stop();
+  $('secNew').onclick = () => section.start();
+  // Through the tiger stripes: from the south pole north to the equator at 30 W.
+  $('secPreset').onclick = $('secPreset2').onclick = () => section.setLine({ lat: -89.9, lon: -30 }, { lat: 0, lon: -30 });
+  window.addEventListener('resize', () => { if (section.isOpen()) section.draw(); });
+  window.addEventListener('keydown', e => { if (e.key === 'Escape' && (section.picking || section.isOpen())) section.stop(); });
+} else $('chips').classList.add('hide');
+
+window.encViewer = viewer;
+})();
+</script>
+</body>
+</html>
