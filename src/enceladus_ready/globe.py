@@ -213,6 +213,8 @@ def build_page(mosaic_max=5, relief_max=5):
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "index.html").write_text(html, encoding="utf8")
     (OUT / "dive.js").write_text(Path(__file__).with_name("globe_dive.js").read_text(encoding="utf8"), encoding="utf8")
+    for asset in (Path(__file__).parent / "assets").glob("*.png"):
+        (OUT / asset.name).write_bytes(asset.read_bytes())
     print(f"wrote {OUT / 'index.html'}")
 
 

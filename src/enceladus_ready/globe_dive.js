@@ -124,16 +124,30 @@ export function start(opts) {
     #dive button:hover{background:#1c2b3a}
     #dive button.on{background:#8ab4f8;color:#0b1220;border-color:#8ab4f8}
     #dive button.exit{background:#8ab4f8;color:#0b1220;border-color:#8ab4f8;font-weight:600}
-    #dive .keys{position:absolute;right:16px;bottom:16px;padding:10px 14px;font-size:12px;color:#9aa4b2;max-width:280px}
-    #dive .keys b{color:#e9edf3}
-    #dive .pad{position:absolute;right:16px;bottom:110px;display:none;grid-template-columns:repeat(3,52px);gap:6px}
-    #dive .pad button{width:52px;height:52px;padding:0;border-radius:12px;font-size:18px}
+    #dive .ctl{position:absolute;right:16px;bottom:16px;padding:12px 14px;width:330px;max-width:calc(100vw - 32px);user-select:none;-webkit-user-select:none}
+    #dive .ctl .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0}
+    #dive .ctl .t{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#9aa4b2;width:48px}
+    #dive .ctl .row button{padding:6px 10px;font-size:12.5px}
+    #dive .ctl .pads{display:flex;gap:14px;margin:8px 0}
+    #dive .ctl .padg{flex:1}
+    #dive .ctl .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:4px}
+    #dive .ctl .g3 button{height:42px;padding:0;border-radius:10px;font-size:15px}
+    #dive .ctl .g3 button small{display:block;font-size:9.5px;color:#9aa4b2;line-height:1}
+    #dive .ctl button.held{background:#8ab4f8;color:#0b1220}
+    #dive .ctl button.held small{color:#0b1220}
+    #dive .ctl .keys{font-size:11px;color:#9aa4b2;margin-top:6px;line-height:1.5}
+    #dive .ctl .keys b{color:#e9edf3}
+    #dive .tip{position:absolute;left:50%;top:70px;transform:translateX(-50%);padding:8px 14px;font-size:13px;color:#e9edf3;display:none}
+    #dive .tip.open{display:block}
     #dive .lbl{position:absolute;transform:translate(-50%,-100%);font:600 12px Inter,sans-serif;color:#bfe6ff;text-shadow:0 0 6px #000,0 0 2px #000;white-space:nowrap;pointer-events:none}
     #dive .lbl.vent{color:#ffc58a}
     #dive .lbl small{display:block;font-weight:400;color:#8fb3cc;text-align:center}
+    #dive .brand{position:absolute;left:50%;top:16px;transform:translateX(-50%);opacity:.92;pointer-events:none;background:rgba(8,20,32,.78);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:7px 14px}
+    #dive .brand img{display:block;height:20px;width:auto}
+    @media (max-width:1100px){ #dive .brand{top:auto;bottom:16px;left:auto;right:16px;transform:none} #dive .brand img{height:16px} }
     #dive .fade{position:absolute;inset:0;background:#02101c;pointer-events:none;transition:opacity 1.2s}
-    @media (pointer:coarse){ #dive .pad{display:grid} #dive .keys{display:none} }
-    @media (max-width:640px){ #dive .hud{width:auto;right:16px;top:64px;padding:10px 12px} #dive .note{display:none} }
+    @media (pointer:coarse){ #dive .ctl .keys{display:none} }
+    @media (max-width:640px){ #dive .hud{width:auto;right:16px;top:64px;padding:10px 12px;font-size:12px} #dive .hud .over{display:none} #dive .note{display:none} #dive .ctl{left:16px;width:auto} }
   </style>
   <canvas></canvas>
   <div class="labels"></div>
@@ -149,16 +163,26 @@ export function start(opts) {
     <div class="over" data-k="over"></div></div>
   <div class="top">
     <button data-a="mode">Switch to submarine</button>
-    <button data-a="lights" class="on">Dive lights</button>
+    <button data-a="vis" class="on">View: dive lights</button>
     <button data-a="stripes">Go to tiger stripes</button>
-    <button data-a="up">Look up</button>
     <button data-a="exit" class="exit">Exit dive</button>
   </div>
-  <div class="card keys"><b>Drag</b> to look around · <b>W A S D</b> or arrows to swim · <b>Space</b> rise · <b>Shift</b> sink · <b>+ / −</b> or wheel for speed · <b>Esc</b> to exit</div>
-  <div class="pad">
-    <span></span><button data-m="f">▲</button><button data-m="u">⤒</button>
-    <button data-m="l">◀</button><button data-m="b">▼</button><button data-m="r">▶</button>
-    <span></span><button data-m="d">⤓</button><span></span>
+  <div class="brand"><img src="spaceocean-wordmark-white.png" alt="Space Ocean Corp"></div>
+  <div class="card tip" data-k="tip"></div>
+  <div class="card ctl">
+    <div class="row"><span class="t">Go to</span><button data-g="ice">Ice ceiling</button><button data-g="mid">Mid-ocean</button><button data-g="floor">Seafloor</button></div>
+    <div class="pads">
+      <div class="padg"><span class="t">Move</span><div class="g3">
+        <button data-m="sl" title="Slide left (Z)">⇠<small>slide</small></button><button data-m="f" title="Forward (W)">▲<small>forward</small></button><button data-m="sr" title="Slide right (C)">⇢<small>slide</small></button>
+        <button data-m="u" title="Rise (Space or R)">⤒<small>rise</small></button><button data-m="b" title="Back (S)">▼<small>back</small></button><button data-m="d" title="Dive down (Shift or F)">⤓<small>dive</small></button>
+      </div></div>
+      <div class="padg"><span class="t">Turn</span><div class="g3">
+        <button data-m="rl" title="Roll left (Q)">⟲<small>roll</small></button><button data-m="pu" title="Nose up (Up arrow)">⤴<small>nose up</small></button><button data-m="rr" title="Roll right (E)">⟳<small>roll</small></button>
+        <button data-m="yl" title="Turn left (A or Left arrow)">◀<small>yaw</small></button><button data-m="pd" title="Nose down (Down arrow)">⤵<small>nose dn</small></button><button data-m="yr" title="Turn right (D or Right arrow)">▶<small>yaw</small></button>
+      </div></div>
+    </div>
+    <div class="row"><span class="t">Speed</span><button data-s="-">−</button><span data-k="speed2" style="min-width:64px;text-align:center;font-variant-numeric:tabular-nums"></span><button data-s="+">+</button><button data-a="level" style="margin-left:auto">Level out</button></div>
+    <div class="keys"><b>Drag</b> to look · <b>W/S</b> forward/back · <b>A/D</b> turn · <b>↑/↓</b> nose up/down · <b>Q/E</b> roll · <b>Space/R</b> rise · <b>Shift/F</b> dive · <b>Z/C</b> slide · <b>L</b> level · <b>+/−</b> speed · <b>Esc</b> exit</div>
   </div>
   <div class="card note">The ice ceiling's shape comes from the selected model (${esc(model.name)}). The fractures follow the mapped jet sources. Small-scale texture and the hydrothermal vents are illustrative: no one has seen the seafloor. Under kilometres of ice it would be completely dark, so the lights are yours.</div>
   <div class="fade"></div>`;
@@ -272,7 +296,7 @@ export function start(opts) {
 
   // ---------- diver state ----------
   const st = {
-    pos: new THREE.Vector3(), fwd: new THREE.Vector3(), pitch: 10 * D2R, speed: 0.4, lights: true, mode: 'scuba',
+    pos: new THREE.Vector3(), fwd: new THREE.Vector3(), pitch: 10 * D2R, roll: 0, speed: 0.4, vis: 'lights', mode: 'scuba', glide: null,
     keys: new Set(), pad: new Set(), drag: null, alive: true, last: performance.now(),
   };
   function placeAt(lat, lon) {
@@ -321,7 +345,8 @@ export function start(opts) {
     if (down && k === 'escape') return stop();
     if (down && (k === '+' || k === '=')) st.speed = Math.min(st.speed * 1.5, 20);
     if (down && (k === '-' || k === '_')) st.speed = Math.max(st.speed / 1.5, 0.02);
-    if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'shift', 'e', 'q', 'c'].includes(k)) {
+    if (down && k === 'l') levelOut();
+    if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'shift', 'e', 'q', 'r', 'f', 'z', 'c'].includes(k)) {
       down ? st.keys.add(k) : st.keys.delete(k); e.preventDefault();
     }
   };
@@ -338,22 +363,35 @@ export function start(opts) {
   const endDrag = () => { st.drag = null; };
   canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
   canvas.addEventListener('wheel', e => { st.speed = Math.max(0.02, Math.min(20, st.speed * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); e.preventDefault(); }, { passive: false });
-  root.querySelectorAll('.pad button').forEach(b => {
-    const on = e => { st.pad.add(b.dataset.m); e.preventDefault(); }, off = () => st.pad.delete(b.dataset.m);
-    b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
+  // Hold a pad button to keep moving or turning.
+  root.querySelectorAll('.ctl [data-m]').forEach(b => {
+    const on = e => { st.pad.add(b.dataset.m); b.classList.add('held'); try { b.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); };
+    const off = () => { st.pad.delete(b.dataset.m); b.classList.remove('held'); };
+    b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('lostpointercapture', off);
   });
+  root.querySelectorAll('.ctl [data-g]').forEach(b => b.onclick = () => { st.glide = b.dataset.g; });
+  root.querySelectorAll('.ctl [data-s]').forEach(b => b.onclick = () => { st.speed = b.dataset.s === '+' ? Math.min(st.speed * 1.5, 20) : Math.max(st.speed / 1.5, 0.02); });
+  function levelOut() { st.pitch = 0; st.roll = 0; }
+  root.querySelector('[data-a="level"]').onclick = levelOut;
   root.querySelector('[data-a="exit"]').onclick = () => stop();
   function setMode(m) {
     st.mode = m; sub.visible = m === 'sub';
     st.speed = m === 'sub' ? Math.max(st.speed, 1.5) : Math.min(st.speed, 0.6);
     root.querySelector('[data-a="mode"]').textContent = m === 'sub' ? 'Switch to scuba' : 'Switch to submarine';
     hud('title').textContent = m === 'sub' ? 'Submarine in the ocean of Enceladus' : 'Diving in the ocean of Enceladus';
-    root.querySelector('[data-a="lights"]').textContent = st.lights ? (m === 'sub' ? 'Sub lights' : 'Dive lights') : 'Real darkness';
+    setVis(st.vis);
+  }
+  const VIS = { lights: 'View: dive lights', sonar: 'View: sonar', dark: 'View: real darkness' };
+  function setVis(v) {
+    st.vis = v;
+    const b = root.querySelector('[data-a="vis"]');
+    b.textContent = v === 'lights' && st.mode === 'sub' ? 'View: sub lights' : VIS[v];
+    b.classList.toggle('on', v !== 'dark');
+    scene.fog.density = v === 'sonar' ? 0.01 : 0.06;
   }
   root.querySelector('[data-a="mode"]').onclick = () => setMode(st.mode === 'sub' ? 'scuba' : 'sub');
-  root.querySelector('[data-a="lights"]').onclick = e => { st.lights = !st.lights; e.target.classList.toggle('on', st.lights); e.target.textContent = st.lights ? (st.mode === 'sub' ? 'Sub lights' : 'Dive lights') : 'Real darkness'; };
+  root.querySelector('[data-a="vis"]').onclick = () => setVis(st.vis === 'lights' ? 'sonar' : st.vis === 'sonar' ? 'dark' : 'lights');
   root.querySelector('[data-a="stripes"]').onclick = () => { fade(() => placeAt(-84, -60)); };
-  root.querySelector('[data-a="up"]').onclick = () => { st.pitch = 60 * D2R; };
   const fadeEl = $('.fade');
   function fade(fn) { fadeEl.style.opacity = 1; setTimeout(() => { fn(); fadeEl.style.opacity = 0; }, 450); }
 
@@ -370,40 +408,64 @@ export function start(opts) {
     const dt = Math.min((now - st.last) / 1000, 0.1); st.last = now;
     const up = st.pos.clone().normalize();
     st.fwd.addScaledVector(up, -st.fwd.dot(up)).normalize();       // keep heading level as we travel round
-    const right = new THREE.Vector3().crossVectors(st.fwd, up).normalize();
-    const look = st.fwd.clone().multiplyScalar(Math.cos(st.pitch)).addScaledVector(up, Math.sin(st.pitch));
-    const has = (...k) => k.some(x => st.keys.has(x));
+    const has = (...k) => k.some(x => st.keys.has(x)), pad = m => st.pad.has(m);
+    // Turning: yaw about the local vertical, pitch the nose, roll about the view.
+    const yaw = (has('a', 'arrowleft') || pad('yl') ? 1 : 0) - (has('d', 'arrowright') || pad('yr') ? 1 : 0);
+    const pit = (has('arrowup') || pad('pu') ? 1 : 0) - (has('arrowdown') || pad('pd') ? 1 : 0);
+    const rol = (has('e') || pad('rr') ? 1 : 0) - (has('q') || pad('rl') ? 1 : 0);
+    if (yaw) st.fwd.applyAxisAngle(up, yaw * 55 * D2R * dt);
+    st.pitch = Math.max(-1.5, Math.min(1.5, st.pitch + pit * 45 * D2R * dt));
+    st.roll = ((st.roll + rol * 60 * D2R * dt + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+    const look = st.fwd.clone().multiplyScalar(Math.cos(st.pitch)).addScaledVector(up, Math.sin(st.pitch)).normalize();
+    const right = new THREE.Vector3().crossVectors(look, up).normalize().applyAxisAngle(look, st.roll);
+    const camUp = new THREE.Vector3().crossVectors(right, look).normalize();
+    // Moving: forward/back along the view, slide sideways, rise/dive straight up or down.
     const mv = new THREE.Vector3();
-    if (has('w', 'arrowup') || st.pad.has('f')) mv.add(look);
-    if (has('s', 'arrowdown') || st.pad.has('b')) mv.sub(look);
-    if (has('d', 'arrowright') || st.pad.has('r')) mv.add(right);
-    if (has('a', 'arrowleft') || st.pad.has('l')) mv.sub(right);
-    if (has(' ', 'e') || st.pad.has('u')) mv.add(up);
-    if (has('shift', 'q', 'c') || st.pad.has('d')) mv.sub(up);
+    if (has('w') || pad('f')) mv.add(look);
+    if (has('s') || pad('b')) mv.sub(look);
+    if (has('c') || pad('sr')) mv.add(right);
+    if (has('z') || pad('sl')) mv.sub(right);
+    const vert = (has(' ', 'r') || pad('u') ? 1 : 0) - (has('shift', 'f') || pad('d') ? 1 : 0);
+    if (vert) { mv.addScaledVector(up, vert); st.glide = null; }
     if (mv.lengthSq() > 0) st.pos.addScaledVector(mv.normalize(), st.speed * dt);
     // Stay in the water: below the ice, above the seafloor.
     const ll = toLL(st.pos), ceil = ceilingAt(ll.lat, ll.lon), floor = floorAt(ll.lat, ll.lon);
     const clear = st.mode === 'sub' ? 0.06 : 0.12;
-    const r = Math.min(Math.max(ll.r, floor + clear), ceil - clear);
+    let r = Math.min(Math.max(ll.r, floor + clear), ceil - clear);
+    // Go to: glide up or down to the ice ceiling, mid-ocean or the seafloor.
+    if (st.glide) {
+      const target = st.glide === 'ice' ? ceil - 0.6 : st.glide === 'floor' ? floor + 0.6 : (ceil + floor) / 2;
+      const step = Math.max(6, st.speed * 4) * dt, dr = target - r;
+      if (Math.abs(dr) <= step) {
+        r = target;
+        if (st.glide === 'floor') st.pitch = -25 * D2R; else if (st.glide === 'ice') st.pitch = 30 * D2R;
+        st.glide = null;
+      } else r += Math.sign(dr) * step;
+    }
     st.pos.setLength(r);
 
-    camera.up.copy(up);
+    camera.up.copy(camUp);
     let lampPos = st.pos;
     if (st.mode === 'sub') {
       sub.position.copy(st.pos);
-      const m4 = new THREE.Matrix4().makeBasis(right.clone().negate(), new THREE.Vector3().crossVectors(look, right.clone().negate()).normalize(), look);
+      const m4 = new THREE.Matrix4().makeBasis(right.clone().negate(), camUp, look);
       sub.quaternion.setFromRotationMatrix(m4);
       sub.userData.prop.rotation.z += dt * (mv.lengthSq() > 0 ? 25 : 3);
-      camera.position.copy(st.pos).addScaledVector(look, -0.075).addScaledVector(up, 0.022);
+      camera.position.copy(st.pos).addScaledVector(look, -0.075).addScaledVector(camUp, 0.022);
       camera.lookAt(st.pos.clone().addScaledVector(look, 0.05));
       lampPos = st.pos.clone().addScaledVector(look, 0.02);
-      subLight.position.copy(camera.position).addScaledVector(up, 0.01);
+      subLight.position.copy(camera.position).addScaledVector(camUp, 0.01);
     } else {
       camera.position.copy(st.pos);
       camera.lookAt(st.pos.clone().add(look));
     }
-    const lampOn = st.lights ? 1 : 0;
-    [iceMat, floorMat].forEach(m => { m.uniforms.uCam.value.copy(camera.position); m.uniforms.uLight.value.copy(lampPos); m.uniforms.uLampDir.value.copy(look); m.uniforms.uLamp.value = lampOn; m.uniforms.uAmbient.value = st.lights ? (m === iceMat ? 0.05 : 0.04) : 0.004; });
+    // Dive lights: lamps and murky water. Sonar: see tens of km (an enhanced view, not what eyes would see).
+    const vis = st.vis, lampOn = vis === 'dark' ? 0 : vis === 'sonar' ? 0.6 : 1;
+    [iceMat, floorMat].forEach(m => {
+      m.uniforms.uCam.value.copy(camera.position); m.uniforms.uLight.value.copy(lampPos); m.uniforms.uLampDir.value.copy(look); m.uniforms.uLamp.value = lampOn;
+      m.uniforms.uAmbient.value = vis === 'sonar' ? (m === iceMat ? 0.5 : 0.85) : vis === 'lights' ? (m === iceMat ? 0.05 : 0.04) : 0.004;
+      m.uniforms.uFog.value = vis === 'sonar' ? 0.00012 : 0.0035;
+    });
 
     // Particles.
     for (let i = 0; i < plume.length; i++) {
@@ -441,6 +503,12 @@ export function start(opts) {
       const T = tempAt(s - r, ll.lat, ll.lon);
       hud('temp').textContent = nearVent ? 'warmer near the vent' : T.text;
       hud('tempsrc').textContent = nearVent ? 'Vent water: above 90 °C where it leaves the seafloor (Hsu et al. 2015). The vent itself is illustrative.' : T.source;
+      const spTxt = st.speed < 1 ? (st.speed * 1000).toFixed(0) + ' m/s' : st.speed.toFixed(1) + ' km/s';
+      hud('speed2').textContent = spTxt;
+      const tip = hud('tip');
+      const tipTxt = st.glide ? `Heading to the ${st.glide === 'ice' ? 'ice ceiling' : st.glide === 'floor' ? 'seafloor' : 'middle of the ocean'}…`
+        : (st.vis !== 'sonar' && ceil - r > 4 && r - floor > 4) ? 'Too dark to see the ice or the seafloor from here. Try View: sonar, or Go to: Seafloor.' : '';
+      tip.textContent = tipTxt; tip.classList.toggle('open', !!tipTxt);
       hud('speed').textContent = st.speed < 1 ? (st.speed * 1000).toFixed(0) + ' m/s' : st.speed.toFixed(1) + ' km/s';
       let best = null, bd = 1e9;
       feats.forEach(f => { const d = toXYZ(f.lat, f.lon, 1).angleTo(up) * s; if (d < bd) { bd = d; best = f; } });
