@@ -197,6 +197,8 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #lifepanel details summary{cursor:pointer;color:var(--text);font-weight:500}
 #lifepanel details ul{padding-left:18px;margin:6px 0}
 #lifepanel details li{margin:3px 0}
+#info .photo{display:block;width:100%;border-radius:8px;margin:8px 0 6px;background:#000;cursor:zoom-in}
+#info .photocredit{font-size:11.5px;color:var(--muted);margin:0 0 8px}
 #loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);z-index:10;pointer-events:none;transition:opacity .6s}
 /* ---------- every screen size ---------- */
 #optsBtn{display:none;background:var(--panel-solid);color:var(--text)}
@@ -366,6 +368,7 @@ body.walking #layers,body.walking #ctrls{display:none}
   <div class="card" id="opts">
     <label><input type="checkbox" id="optLabels" checked> Feature names</label>
     <label><input type="checkbox" id="optJets" checked> Plume jet sources (100)</label>
+    <label id="optPhotosRow"><input type="checkbox" id="optPhotos" checked> Cassini photos</label>
     <label id="optHiresRow"><input type="checkbox" id="optHires" checked> High-res Cassini areas</label>
     <label><input type="checkbox" id="optGrid"> Latitude / longitude grid</label>
     <div class="row"><span>Terrain exaggeration</span><span id="exagv">4×</span></div>
@@ -467,7 +470,7 @@ body.walking #layers,body.walking #ctrls{display:none}
   </details>
 </div>
 <div id="status">
-  <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · Saturn: Solar System Scope (CC BY 4.0) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
+  <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · Photos: NASA/JPL-Caltech/SSI · Saturn: Solar System Scope (CC BY 4.0) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
   <span id="scale"><i></i><span></span></span>
   <span id="cursor">—</span>
   <span id="cam"></span>
@@ -477,6 +480,7 @@ body.walking #layers,body.walking #ctrls{display:none}
 <script src="features.js"></script>
 <script src="hires.js" onerror="window.ENC_HIRES=null"></script>
 <script src="interior.js" onerror="window.ENC_INTERIOR=null"></script>
+<script src="photos.js" onerror="window.ENC_PHOTOS=null"></script>
 <script>
 (() => {
 const C = Cesium;
@@ -705,9 +709,31 @@ const areas = (HI && HI.areas || []).map(a => {
   });
   return o;
 });
+// Real Cassini photos (pixi run photos): a camera marker where each frame looked; plume shots sit by the south pole.
+const photoSrc = new C.CustomDataSource('photos'); viewer.dataSources.add(photoSrc);
+const camIcon = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 34; const g = c.getContext('2d');
+  g.fillStyle = '#16181e'; g.strokeStyle = '#ffffff'; g.lineWidth = 2;
+  g.beginPath(); g.arc(17, 17, 15, 0, 2 * Math.PI); g.fill(); g.stroke();
+  g.fillStyle = '#ffffff'; g.fillRect(8, 12, 18, 12); g.fillRect(13, 9, 8, 4);
+  g.fillStyle = '#16181e'; g.beginPath(); g.arc(17, 18, 4.2, 0, 2 * Math.PI); g.fill();
+  g.fillStyle = '#ffffff'; g.beginPath(); g.arc(17, 18, 2.2, 0, 2 * Math.PI); g.fill();
+  return c;
+})();
+const photos = (window.ENC_PHOTOS || []).map(p => {
+  const o = { ...p, kind: 'photo', name: p.title + ' · ' + p.time.slice(0, 10), type: 'Cassini photo' };
+  o.entity = photoSrc.entities.add({
+    position: C.Cartesian3.fromDegrees(o.lon, o.lat, 0, E),
+    billboard: { image: camIcon, width: 26, height: 26, eyeOffset: new C.Cartesian3(0, 0, -3000), distanceDisplayCondition: new C.DistanceDisplayCondition(0, 2.2e6),
+      scaleByDistance: new C.NearFarScalar(3e4, 1.15, 1.5e6, 0.75) },
+    properties: { ref: o },
+  });
+  return o;
+});
+if (!photos.length) document.getElementById('optPhotosRow').classList.add('hide');
 // Keep markers on the surface: they need the exaggerated terrain height.
 async function placeOnTerrain() {
-  const all = [...feats, ...jets, ...areas];
+  const all = [...feats, ...jets, ...areas, ...photos];
   const carto = all.map(o => C.Cartographic.fromDegrees(o.lon, o.lat));
   try { await C.sampleTerrain(terrain, 4, carto); } catch (e) { console.warn(e); return; }
   all.forEach((o, i) => { o.h = carto[i].height; });
@@ -715,7 +741,7 @@ async function placeOnTerrain() {
 }
 function updateHeights() {
   const ex = scene.verticalExaggeration;
-  [...feats, ...jets, ...areas].forEach(o => { if (o.h !== undefined) o.entity.position = C.Cartesian3.fromDegrees(o.lon, o.lat, o.h * ex + 300, E); });
+  [...feats, ...jets, ...areas, ...photos].forEach(o => { if (o.h !== undefined) o.entity.position = C.Cartesian3.fromDegrees(o.lon, o.lat, o.h * ex + 300, E); });
 }
 
 // ---------- info panel ----------
@@ -726,7 +752,17 @@ function demHeight(o) { return o.h === undefined ? null : (R + o.h) - ellR(o.lat
 function showInfo(o) {
   const el = document.getElementById('infobody'); let h;
   const dh = demHeight(o);
-  if (o.kind === 'area') {
+  if (o.kind === 'photo') {
+    h = `<h2>${esc(o.title)}</h2><div class="type">Cassini photo · ${esc(o.time)}</div>
+      <a href="photos/${esc(o.id)}.jpg" target="_blank" rel="noopener"><img class="photo" src="photos/${esc(o.id)}.jpg" alt="${esc(o.title)}, Cassini frame ${esc(o.id.toUpperCase())}"></a>
+      <p class="photocredit">NASA/JPL-Caltech/Space Science Institute. Frame ${esc(o.id.toUpperCase())}, narrow-angle camera, clear filter, calibrated by the mission's pipeline and brightened for viewing.</p>
+      <p>${esc(o.caption)}</p>
+      <dl><dt>Sun behind Cassini by</dt><dd>${o.phase}° phase angle${o.phase > 140 ? ' (looking toward the Sun)' : ''}</dd>
+      ${o.range_km ? `<dt>Distance</dt><dd>${o.range_km.toLocaleString()} km from the moon's centre</dd>` : ''}
+      ${o.res_m && o.kind === 'photo' && o.res_m < 1000 ? `<dt>Finest detail</dt><dd>about ${Math.round(o.res_m)} m per pixel</dd>` : ''}
+      <dt>Marker</dt><dd>${o.lat > -81.9 || o.lat < -82.1 ? 'centre of the area the photo shows' : 'by the south pole, where these jets rise (the photo was taken from far away)'}</dd></dl>
+      <a href="${esc(o.opus)}" target="_blank" rel="noopener">This frame in the PDS archive (OPUS) ↗</a>`;
+  } else if (o.kind === 'area') {
     const fl = o.dates.map(d => new Date(d + 'T00:00:00Z').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }));
     h = `<h2>${esc(o.name)}</h2><div class="type">High-resolution Cassini imagery</div>
       <dl><dt>Detail</dt><dd>${o.spacing_m} m per pixel (global map: 100 m)</dd>
@@ -761,7 +797,7 @@ function closeInfo() { document.getElementById('info').classList.remove('open');
 document.getElementById('infoclose').onclick = closeInfo;
 
 function flyTo(o, now) {
-  const range = o.kind === 'jet' ? 35e3 : o.kind === 'area' ? Math.min(Math.sqrt(o.km2) * 1000 * 2.2, 380e3) : Math.min(Math.max((o.diameter_km || 30) * 1000 * 2.4, 45e3), 420e3);
+  const range = o.kind === 'jet' ? 35e3 : o.kind === 'photo' ? 120e3 : o.kind === 'area' ? Math.min(Math.sqrt(o.km2) * 1000 * 2.2, 380e3) : Math.min(Math.max((o.diameter_km || 30) * 1000 * 2.4, 45e3), 420e3);
   const target = C.Cartesian3.fromDegrees(o.lon, o.lat, (o.h || 0) * scene.verticalExaggeration, E);
   const hpr = new C.HeadingPitchRange(0, C.Math.toRadians(range > 250e3 ? -70 : -48), range);
   if (now) camera.lookAt(target, hpr), camera.lookAtTransform(C.Matrix4.IDENTITY);
@@ -781,7 +817,7 @@ function pickMarker(pos) {
     const o = ent.properties.ref.getValue();
     let d = HIT_PX;  // outlines and other shapes rank behind any dot
     const wp = ent.position && C.SceneTransforms.worldToWindowCoordinates(scene, ent.position.getValue(C.JulianDate.now()));
-    if (wp && ent.point) d = Math.hypot(wp.x - pos.x, wp.y - pos.y);
+    if (wp && (ent.point || ent.billboard)) d = Math.hypot(wp.x - pos.x, wp.y - pos.y);
     if (d < bestD) { bestD = d; best = o; }
   }
   return best;
@@ -848,15 +884,15 @@ handler.setInputAction(e => {
 
 // ---------- search ----------
 const q = document.getElementById('q'), res = document.getElementById('results');
-const index = [...areas, ...feats, ...jets];
+const index = [...areas, ...photos, ...feats, ...jets];
 let hits = [], selI = 0;
 function render() {
   const s = q.value.trim().toLowerCase();
   if (!s) { res.classList.remove('open'); return; }
-  hits = index.filter(o => o.name.toLowerCase().includes(s) || (o.type || o.sulcus || '').toLowerCase().includes(s) || (o.kind === 'area' && /hi|res|detail|cassini/.test(s)))
+  hits = index.filter(o => o.name.toLowerCase().includes(s) || (o.type || o.sulcus || '').toLowerCase().includes(s) || (o.kind === 'area' && /hi|res|detail|cassini/.test(s)) || (o.kind === 'photo' && /photo|image|picture|cassini|plume/.test(s)))
     .sort((a, b) => (b.name.toLowerCase().startsWith(s)) - (a.name.toLowerCase().startsWith(s)) || (b.diameter_km || 0) - (a.diameter_km || 0)).slice(0, 30);
   selI = 0;
-  res.innerHTML = hits.length ? hits.map((o, i) => `<button data-i="${i}" class="${i === 0 ? 'sel' : ''}"><span>${esc(o.name)}</span><small>${o.kind === 'jet' ? 'Jet · ' + esc(o.sulcus) : o.kind === 'area' ? 'High-res · ' + o.spacing_m + ' m' : esc(o.type)} · ${ll(o.lat, o.lon)}</small></button>`).join('')
+  res.innerHTML = hits.length ? hits.map((o, i) => `<button data-i="${i}" class="${i === 0 ? 'sel' : ''}"><span>${esc(o.name)}</span><small>${o.kind === 'jet' ? 'Jet · ' + esc(o.sulcus) : o.kind === 'photo' ? 'Cassini photo' : o.kind === 'area' ? 'High-res · ' + o.spacing_m + ' m' : esc(o.type)} · ${ll(o.lat, o.lon)}</small></button>`).join('')
     : '<div style="padding:8px 14px;color:var(--muted)">No named feature matches.</div>';
   res.classList.add('open');
 }
@@ -878,6 +914,7 @@ optsBtn.onclick = e => { e.stopPropagation(); const o = optsEl.classList.toggle(
 cv.addEventListener('pointerdown', () => { if (optsEl.classList.contains('open')) { optsEl.classList.remove('open'); optsBtn.classList.remove('active'); optsBtn.setAttribute('aria-expanded', false); } });
 document.getElementById('optLabels').onchange = e => { labelSrc.show = e.target.checked; };
 document.getElementById('optJets').onchange = e => { jetSrc.show = e.target.checked; };
+document.getElementById('optPhotos').onchange = e => { photoSrc.show = e.target.checked; };
 document.getElementById('optHires').onchange = e => { areaSrc.show = e.target.checked; if (hires) hires.show = e.target.checked && mosaic.show; };
 document.getElementById('optGrid').onchange = e => { grid.show = e.target.checked; };
 const exag = document.getElementById('exag');
@@ -1240,7 +1277,7 @@ const inside = {
     // While a cut is open, markers would float over the removed cap or show through from the far
     // side, so all of them (names, jets, outlines, the section line) are hidden until it closes.
     const show = rcut === Infinity;
-    [labelSrc, jetSrc, areaSrc, secSrc].forEach(src => { src.show = show && (src !== jetSrc || $('optJets').checked) && (src !== labelSrc || $('optLabels').checked) && (src !== areaSrc || $('optHires').checked); });
+    [labelSrc, jetSrc, areaSrc, secSrc, photoSrc].forEach(src => { src.show = show && (src !== jetSrc || $('optJets').checked) && (src !== labelSrc || $('optLabels').checked) && (src !== areaSrc || $('optHires').checked) && (src !== photoSrc || $('optPhotos').checked); });
   },
   report(m, surf0, rcut) {
     const c = interiorAt(this.spot.lat, this.spot.lon, m), d = this.depthKm;

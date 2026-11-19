@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import math
+from pathlib import Path
 
 import numpy as np
 import rasterio
@@ -148,6 +149,7 @@ def build_models(lats, lons, n8):
             "From the paper: average shell 27–33 km (30 used) and ocean 21–26 km (23.5 used), so a rocky core of about 198.5 km.",
             pattern_note + " The paper's own map is not reproduced here.",
         ], "Park, R. S. et al. (2024), J. Geophys. Res. Planets: The global shape, gravity field, and libration of Enceladus."),
+        _planetprofile(make),
         make("airy", "Plain floating ice", 20.0, AIRY, 182.5, [
             f"Physics only, no calibration: every metre of missing relief means about {AIRY:.1f} m less ice (ice {RHO_ICE:.0f}, ocean {RHO_WATER:.0f} kg/m³).",
             "This ignores the stiffness of the ice and overstates the contrasts. The ice pinches to the 1 km floor near the south pole.",
@@ -155,6 +157,38 @@ def build_models(lats, lons, n8):
         ], "Our calculation from the Schenk & McKinnon (2024) topography."),
     ]
     return models
+
+
+PLANETPROFILE = Path(__file__).resolve().parents[2] / "docs" / "planetprofile" / \
+    "EnceladusProfile_Seawater_10.0ppt_Tb272.4578K_PorousRock_phi0.32_Pc3.50e+02.txt"
+
+
+def planetprofile_header(path=PLANETPROFILE):
+    """Numbers from the header of a PlanetProfile output file (see docs/planetprofile/README.md)."""
+    out = {}
+    for line in path.read_text(encoding="utf8").splitlines()[:90]:
+        if " = " in line:
+            k, v = line.strip().split(" = ", 1)
+            try:
+                out[k.strip()] = float(v)
+            except ValueError:
+                out[k.strip()] = v.strip()
+    return out
+
+
+def _planetprofile(make):
+    """PlanetProfile's default Enceladus: one-dimensional, so the same shell thickness everywhere (k = 0)."""
+    h = planetprofile_header()
+    ice, ocean, core = h["zb_km"], h["D_km"], h["RsilMean_m"] / 1000.0
+    return make("planetprofile", "PlanetProfile (JPL) default", round(ice, 1), 0.0, round(core, 1), [
+        f"Run of PlanetProfile 3.1.2 with its default Enceladus settings: ice shell {ice:.1f} km, ocean {ocean:.1f} km, "
+        f"porous rock core {core:.1f} km in radius with no iron core.",
+        f"Ocean: seawater-like, 10 g of salt per kg, density {h['rhoOcean_kgm3']:.0f} kg/m³. Rock: {h['rhoSil_kgm3']:.0f} kg/m³ "
+        f"with {100 * h['phiRockCalc_frac']:.0f}% pore space. Surface heat flow {1000 * h['qSurf_Wm2']:.1f} mW/m².",
+        f"Its interior matches the measured moment of inertia ({h['CMR2mean']:.4f} vs 0.335). "
+        "The model is one-dimensional, so the shell is the same thickness everywhere; the ocean depth still varies with the moon's shape.",
+    ], "Vance, S. D. et al. (2018), J. Geophys. Res. Planets 123, 180–205; PlanetProfile (github.com/vancesteven/PlanetProfile, GPL-3). "
+       "Output file and how to reproduce it: docs/planetprofile in enceladus-ready.")
 
 
 def _ice_colors(t_km):

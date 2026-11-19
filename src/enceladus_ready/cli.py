@@ -9,7 +9,7 @@ from . import ancillary, globe, inset, release, serve, sources, tile, validate, 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("step", choices=["fetch", "cog", "tile", "ephem", "inset", "viewer", "globe", "release", "all"])
+    parser.add_argument("step", choices=["fetch", "cog", "tile", "ephem", "inset", "viewer", "globe", "photos", "release", "all"])
     step = parser.parse_args().step
 
     if step in ("fetch", "all"):
@@ -30,6 +30,9 @@ def main() -> None:
         viewer.build()
     if step == "globe":
         globe.build_all()
+    if step == "photos":
+        from . import globe_photos  # optional: real Cassini photos for the globe
+        globe_photos.build()
     if step == "release":
         release.build()
 
