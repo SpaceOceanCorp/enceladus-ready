@@ -40,6 +40,7 @@ pixi run python -m http.server 8765 --directory out/globe
 
 Go to http://localhost:8765. The page uses CesiumJS from cdnjs, so it needs internet for the library only.
 
+* **Take the tour (first button):** a seven-step guided mission through every tool: arrive with the Cassini plume photos, pick a site at the tiger stripes, look inside the ice (Čadek et al. 2016 against PlanetProfile), land the Orbilander and test for life, drive a rover with the Earth signal delay, dive into the ocean, and a debrief on what is measured and what is modelled. Each step opens the existing mode with sensible settings and can be left at any time; leaving the dive returns to the tour. The narration adds no data of its own: each number it gives is shown, with its source, in the panel it opens. `globe_tour.js`.
 * **Layers:** Cassini mosaic (levels 0-5, about 100 m per pixel at full zoom), color topography with hillshade from the DEM, or both blended.
 * **Terrain:** 65 x 65 height tiles to level 5 (about 390 m spacing, close to the DEM's true 400 m post spacing). Heights are the true radius (reference ellipsoid plus DEM) minus a 252.1 km display sphere, so the moon's triaxial shape is real. Exaggeration is adjustable from 0 to 20x.
 * **Names:** all 87 IAU features from the USGS Gazetteer (`data/nomenclature/`, downloaded from planetarynames.wr.usgs.gov). Click one for its size, elevation, name origin and Gazetteer link. The four tiger stripes are highlighted.
