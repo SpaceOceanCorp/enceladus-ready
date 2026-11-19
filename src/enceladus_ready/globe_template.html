@@ -197,6 +197,18 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #lifepanel details summary{cursor:pointer;color:var(--text);font-weight:500}
 #lifepanel details ul{padding-left:18px;margin:6px 0}
 #lifepanel details li{margin:3px 0}
+#lifepanel .lifeReal{list-style:none;padding:0;margin:4px 0;font-size:12px}
+#lifepanel .lifeReal li{padding:6px 0;border-bottom:1px solid var(--line)}
+#lifepanel .lifeReal .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#lifepanel .lifeReal button{background:#1d2129;border:1px solid var(--line);color:var(--text);border-radius:12px;padding:3px 10px;font:500 11.5px Inter,sans-serif;cursor:pointer;flex:none}
+#lifepanel .lifeReal button:disabled{opacity:.5;cursor:default}
+#lifepanel .hide2{display:none}
+#lifePins{list-style:none;padding:0;margin:4px 0;font-size:12px}
+#lifePins li{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+#lifePins li span{flex:1;min-width:0}
+#lifePins button{background:#1d2129;border:1px solid var(--line);color:var(--text);border-radius:12px;padding:3px 8px;font:500 11.5px Inter,sans-serif;cursor:pointer}
+#lifePins button:hover{background:#2a2f3a}
+#lifePinMode[aria-pressed="true"]{background:#ffd36b!important;color:#0b1220!important;font-weight:600}
 #info .photo{display:block;width:100%;border-radius:8px;margin:8px 0 6px;background:#000;cursor:zoom-in}
 #info .photocredit{font-size:11.5px;color:var(--muted);margin:0 0 8px}
 #chipTour{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
@@ -469,11 +481,24 @@ body.walking #layers,body.walking #ctrls{display:none}
   <div class="top"><h3>Life detection</h3><button class="iconbtn" id="lifeClose" aria-label="Close">&#10005;</button></div>
   <p class="cite">NASA's proposed Enceladus Orbilander would land and test plume fallout for signs of life. Here you run its proposed Life Detection Suite. The model and every number come from <a href="https://github.com/sisl/LifeDetection" target="_blank" rel="noopener">sisl/LifeDetection</a> (Stanford SISL with NASA Ames; <a href="https://arxiv.org/abs/2510.08812" target="_blank" rel="noopener">Kim et al. 2025</a>).</p>
   <p class="cite" id="lifeSite"></p>
+  <div class="rv-row"><button id="lifeCopySite">Copy site lat, lon</button><button id="lifePinSite">Pin this site</button></div>
+  <div class="rv-row"><label class="cite">Data: <select id="lifeData"><option value="cassini">Cassini measurements (real)</option><option value="sim">Simulated Orbilander readings</option></select></label></div>
+  <div id="lifeSimTank">
   <div class="barrow"><span>Sample in the tank</span><b id="lifeTankV"></b></div>
   <div class="bar"><i id="lifeTank"></i></div>
+  </div>
   <div class="barrow"><span>Chance of life, given the readings so far</span><b id="lifeBelV"></b></div>
   <div class="bar"><i id="lifeBel"></i></div>
   <p class="cite" id="lifeStatus"></p>
+  <div id="lifeReal">
+    <p class="cite">Real measurements of Enceladus's ocean, from Cassini's mass spectrometers sampling the plume and E-ring grains, fed into the same model. They describe the ocean, not one spot, so they are the same wherever you land.</p>
+    <h4>Measured by Cassini</h4>
+    <ul id="lifeRealList" class="lifeReal"></ul>
+    <div class="rv-row"><button class="go" id="lifeRealAll">Apply all Cassini data</button><button id="lifeRealReset">Start over</button></div>
+    <h4>Not measured by Cassini</h4>
+    <ul id="lifeRealMissing" class="lifeReal"></ul>
+  </div>
+  <div id="lifeSimCtl">
   <h4>Instruments</h4>
   <div id="lifeInst"></div>
   <div class="rv-row"><button id="lifeCollect">Collect fallout</button><button id="lifeYes">Declare: life</button><button id="lifeNo">Declare: no life</button></div>
@@ -481,18 +506,30 @@ body.walking #layers,body.walking #ctrls{display:none}
   <h4>Let it run</h4>
   <div class="rv-row"><button id="lifeAutoC">Mission baseline (ConOps)</button><button id="lifeAutoL">One-step lookahead</button><button id="lifeAutoStop">Stop</button></div>
   <div class="rv-row"><button id="lifeNew">New sample</button><label class="cite">Truth: <select id="lifeTruth"><option value="random">Random (10% life)</option><option value="life">Life present</option><option value="none">No life</option></select></label></div>
+  </div>
   <h4>Readings</h4>
   <ol id="lifeLog" reversed></ol>
+  <div id="lifeSimCmp">
   <h4>Compare the strategies</h4>
   <div class="rv-row"><button id="lifeCompare">Run 500 landings each</button></div>
   <div id="lifeCmp"></div>
+  </div>
   <div class="rv-row"><button class="lnk" id="lifeMove">Land somewhere else</button></div>
+  <h4>Pins</h4>
+  <p class="cite">Mark places to compare or come back to. Coordinates are latitude, longitude in degrees (east-positive, −180 to 180) on a 252.1 km sphere. Pins stay in this browser.</p>
+  <div class="rv-row"><button id="lifePinMode" aria-pressed="false">Drop pins by clicking</button><button id="lifeCopyPins">Copy all</button><button id="lifeClearPins">Clear pins</button></div>
+  <ul id="lifePins"></ul>
+  <h4>Export</h4>
+  <p class="cite">Every run at every site this visit: site coordinates, whether the data was Cassini or simulated, each step (measurement or instrument, values, sources, evidence, chance of life before and after), the outcome, plus your pins.</p>
+  <div class="rv-row"><button id="lifeExportCsv">This run (CSV)</button><button id="lifeExportJson">All runs and pins (JSON)</button></div>
+  <p class="cite" id="lifeToast" aria-live="polite"></p>
   <details><summary>Where every number comes from</summary>
     <ul>
       <li><b>Chance of life before any reading (10%), and how likely each reading is with and without life:</b> <a href="https://github.com/sisl/LifeDetection/blob/main/src/bayes_net.jl" target="_blank" rel="noopener">src/bayes_net.jl</a>. Curves are cut into bins as in <a href="https://github.com/sisl/LifeDetection/blob/main/src/common/bayes_net_helpers.jl" target="_blank" rel="noopener">src/common/bayes_net_helpers.jl</a>.</li>
       <li><b>The six instruments, what each measures, the sample each uses, the 500-unit tank and fallout of about 270 units per collection (±25%):</b> <a href="https://github.com/sisl/LifeDetection/blob/main/src/LifeDetectionPOMDP.jl" target="_blank" rel="noopener">src/LifeDetectionPOMDP.jl</a>. Units are the repo's scaled sample units.</li>
       <li><b>The mission baseline (ConOps) and the 99.9% / 0.1% thresholds for declaring:</b> <code>conops_orbiter</code> and <code>simulate_policyVLD</code> in <a href="https://github.com/sisl/LifeDetection/blob/main/src/common/simulate.jl" target="_blank" rel="noopener">src/common/simulate.jl</a>.</li>
       <li><b>Different from the repo:</b> whether life is present stays fixed for the whole landing (the repo redraws it with each new batch of fallout), and the one-step lookahead is ours. The paper's planner (SARSOP) is not run here.</li>
+      <li><b>Cassini data mode:</b> salinity from <a href="https://doi.org/10.1038/nature08046" target="_blank" rel="noopener">Postberg et al. 2009</a> and <a href="https://doi.org/10.1038/nature10175" target="_blank" rel="noopener">2011</a>; CHNOPS from <a href="https://doi.org/10.1038/nature08153" target="_blank" rel="noopener">Waite et al. 2009</a> and <a href="https://doi.org/10.1038/s41586-023-05987-9" target="_blank" rel="noopener">Postberg et al. 2023</a>; redox from ocean H₂ in <a href="https://doi.org/10.1126/science.aai8703" target="_blank" rel="noopener">Waite et al. 2017</a> and pH from Postberg et al. 2009 and <a href="https://arxiv.org/abs/1502.01946" target="_blank" rel="noopener">Glein et al. 2015</a>. The model gives salinity and CHNOPS no units, so how each is placed on its 0–1 scale is our choice and is stated next to each measurement. Each measurement is entered as a range of bins, and readings that share hidden causes are combined jointly, not multiplied as if independent.</li>
       <li>The probabilities are the authors' modelling assumptions, not measurements. The repo has no licence, so its code is not copied; the model is rebuilt here from its published numbers.</li>
     </ul>
   </details>
@@ -873,6 +910,7 @@ handler.setInputAction(e => {
   if (rover.picking) { rover.pickArea(e.position); return; }
   if (rover.on) { rover.click(e.position); return; }
   if (life.picking) { life.pickSite(e.position); return; }
+  if (life.pinning) { life.addPinAt(e.position); return; }
   if (dive.picking) { dive.pick(e.position); return; }
   if (inside.picking) { inside.pick(e.position); return; }
   if (section.picking) { section.addPoint(e.position); return; }
