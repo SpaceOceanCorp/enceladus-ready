@@ -362,7 +362,8 @@ body.walking #layers,body.walking #ctrls{display:none}
   <div id="roverBody" class="hide">
     <p class="cite" id="roverArea"></p>
     <div><b id="roverTime"></b></div>
-    <div class="seg" id="roverSpeed"><button data-s="0">Pause</button><button data-s="1">1 h/s</button><button data-s="6" class="on">6 h/s</button><button data-s="24">1 day/s</button></div>
+    <div class="seg" id="roverSpeed"><button data-s="0" title="Stop the mission clock">Pause</button><button data-s="1" title="1 hour of mission time every real second">1 h/s</button><button data-s="6" class="on" title="6 hours of mission time every real second">6 h/s</button><button data-s="24" title="1 day of mission time every real second">1 day/s</button></div>
+    <p class="cite" style="margin:0 0 4px">Clock speed: mission time per real second. The rover drives about 120 m an hour and parks to recharge, so a 4-target plan takes around 5 weeks of mission time, about 2 minutes at 6 h/s or 35 seconds at 1 day/s.</p>
     <dl>
       <dt>Earth</dt><dd id="roverEarth"></dd>
       <dt>Signal delay</dt><dd id="roverLT"></dd>
