@@ -12,7 +12,7 @@
 :root{
   --bg:#000;--panel:rgba(22,24,30,.92);--panel-solid:#16181e;--line:rgba(255,255,255,.12);
   --text:#e9edf3;--muted:#9aa4b2;--accent:#8ab4f8;--stripe:#7ee2ff;--jet:#ffd36b;
-  --shadow:0 2px 10px rgba(0,0,0,.5);
+  --shadow:0 2px 10px rgba(0,0,0,.5);--z:1;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.4 Inter,system-ui,sans-serif;overflow:hidden}
@@ -30,7 +30,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #results button{display:flex;width:100%;gap:10px;align-items:baseline;padding:8px 14px;background:none;border:0;color:var(--text);font:inherit;text-align:left;cursor:pointer}
 #results button:hover,#results button.sel{background:rgba(138,180,248,.12)}
 #results small{color:var(--muted)}
-#info{position:absolute;top:76px;left:16px;width:380px;max-width:calc(100vw - 32px);max-height:calc(100vh - 160px);overflow:auto;padding:18px;display:none;z-index:4}
+#info{position:absolute;top:76px;left:16px;width:380px;max-width:calc(100vw - 32px);max-height:calc(100vh / var(--z) - 160px);overflow:auto;padding:18px;display:none;z-index:4}
 #info.open{display:block}
 #info h2{margin:0 0 2px;font-size:22px;font-weight:600}
 #info .type{color:var(--muted);margin-bottom:14px}
@@ -78,7 +78,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 .chip:hover{background:#262a33}
 .chip.on{background:var(--accent);color:#0b1220;border-color:var(--accent)}
 .chip svg{flex:none}
-#icepanel,#insidepanel{position:absolute;top:66px;right:16px;width:320px;max-width:calc(100vw - 32px);max-height:max(220px,calc(100vh - 360px));overflow:auto;padding:14px 16px;z-index:4}
+#icepanel,#insidepanel{position:absolute;top:66px;right:16px;width:320px;max-width:calc(100vw - 32px);max-height:max(220px,calc(100vh / var(--z) - 360px));overflow:auto;padding:14px 16px;z-index:4}
 #insidepanel h3,#icepanel h3{margin:0 0 8px;font-size:15px;font-weight:600}
 .seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .seg button{flex:1 1 45%;padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text);font:500 12px Inter,sans-serif;cursor:pointer;text-align:left;line-height:1.25}
@@ -111,26 +111,183 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #divehint .modes{display:flex;gap:0;border:1px solid rgba(255,255,255,.22);border-radius:16px;overflow:hidden}
 #divehint .modes button{border:0;border-radius:0;background:transparent;color:#cfd6e0}
 #divehint .modes button.go{background:#e9edf3;color:#0b1220;font-weight:600}
+#landhint{position:absolute;left:16px;right:16px;margin:0 auto;width:fit-content;top:70px;z-index:6;padding:8px 8px 8px 16px;font-size:14px;display:none;align-items:center;gap:10px;background:rgba(16,18,24,.96);color:#f2f5f9;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px)}
+#landhint.open{display:flex}
+#landhint button,#walkhud button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:16px;padding:6px 12px;font:500 13px Inter,sans-serif;cursor:pointer}
+#landhint button:hover,#walkhud button:hover{background:#323947}
+#landhint button.go,#walkhud button.go{background:#e9edf3;color:#0b1220;font-weight:600}
+#walkhud{position:absolute;left:16px;bottom:44px;z-index:6;width:min(360px,calc(100vw - 32px));padding:12px 14px;background:rgba(16,18,24,.92);color:#f2f5f9;font:13px/1.45 Inter,sans-serif}
+#walkhud.hide{display:none}
+#walkhud h3{margin:0 0 6px;font:600 15px Inter,sans-serif}
+#walkhud dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0 0 8px}#walkhud dt{color:#9aa4b2}#walkhud dd{margin:0}
+#walkhud .row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+#walkhud .pad{display:grid;grid-template-columns:repeat(3,44px);gap:4px;margin:6px 0}
+#walkhud .pad button{padding:8px 0;border-radius:10px;touch-action:none}
+#walkhud .help{color:#9aa4b2;font-size:12px;margin:6px 0 0}
 #diveStripes{background:var(--accent)!important;color:#0b1220!important;border-color:var(--accent)!important;font-weight:600!important}
 #insideTemp{font-size:12.5px;color:#cfd6e0;margin:6px 0}
 #insideTemp .tp{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:4px;font-variant-numeric:tabular-nums}
 #insideTemp .tp span:nth-child(odd){color:var(--muted)}
+#roverhint{position:absolute;left:16px;right:16px;margin:0 auto;width:fit-content;top:70px;z-index:6;padding:8px 8px 8px 16px;font-size:14px;display:none;align-items:center;gap:10px;background:rgba(16,18,24,.96);color:#f2f5f9;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px)}
+#roverhint.open{display:flex}
+#roverhint button,#roverpanel .rv-row button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:16px;padding:6px 12px;font:500 13px Inter,sans-serif;cursor:pointer}
+#roverhint button:hover,#roverpanel .rv-row button:hover{background:#323947}
+#roverhint button.go,#roverpanel .rv-row button.go{background:#e9edf3;color:#0b1220;font-weight:600}
+#roverpanel .rv-row button:disabled{opacity:.45;cursor:default}
+#roverpanel{position:absolute;top:66px;right:16px;width:360px;max-width:calc(100vw - 32px);max-height:calc(100vh / var(--z) - 110px);overflow:auto;padding:14px 16px;z-index:4;font-size:13px}
+#roverpanel.hide{display:none}
+#roverpanel .top{display:flex;justify-content:space-between;align-items:center}
+#roverpanel h3{margin:0;font-size:15px;font-weight:600}
+#roverpanel h4{margin:12px 0 4px;font-size:13px;font-weight:600}
+#roverpanel .cite{font-size:11.5px;color:var(--muted)}
+#roverpanel dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0}
+#roverpanel dt{color:var(--muted)}#roverpanel dd{margin:0}
+#roverpanel b.ok{color:#57c785}#roverpanel b.no{color:#ff9a3c}
+#roverpanel .rv-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+#roverpanel .rv-row label{font-size:12.5px;color:#cfd6e0;display:flex;gap:6px;align-items:flex-start}
+#roverpanel .seg{margin:6px 0}#roverpanel .seg button{flex:1 1 20%;text-align:center}
+#roverpanel ol{margin:4px 0;padding-left:18px}
+#roverpanel ol li{margin:3px 0}
+#roverpanel button.lnk{background:none;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:3px 9px;font:500 12px Inter,sans-serif;cursor:pointer}
+#roverTargets button.lnk{padding:0 6px;border:0;color:var(--muted)}
+#roverLog{max-height:150px;overflow:auto;font-size:12px;color:#cfd6e0}
+#roverLegend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--muted)}
+#roverLegend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+#roverUplink{color:#e9edf3;font-size:12.5px;margin:4px 0}
+#roverFlash{font-size:12.5px;color:#ffd36b;min-height:0;max-height:0;overflow:hidden;transition:max-height .2s}
+#roverFlash.show{max-height:60px;margin:4px 0}
+#roverSumText p{margin:6px 0}
+#roverpanel details{margin-top:10px;font-size:12px;color:#cfd6e0}
+#roverpanel details summary{cursor:pointer;color:var(--text);font-weight:500}
+#roverpanel details ul{padding-left:18px;margin:6px 0}
+#roverpanel a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}#roverpanel a:hover{color:#c6dafc}
+#lifehint{position:absolute;left:16px;right:16px;margin:0 auto;width:fit-content;top:70px;z-index:6;padding:8px 8px 8px 16px;font-size:14px;display:none;align-items:center;gap:10px;background:rgba(16,18,24,.96);color:#f2f5f9;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px)}
+#lifehint.open{display:flex}
+#lifehint button,#lifepanel .rv-row button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:16px;padding:6px 12px;font:500 13px Inter,sans-serif;cursor:pointer}
+#lifehint button:hover,#lifepanel .rv-row button:hover{background:#323947}
+#lifehint button.go,#lifepanel .rv-row button.go{background:#e9edf3;color:#0b1220;font-weight:600}
+#lifepanel .rv-row button:disabled,#lifeInst button:disabled{opacity:.4;cursor:default}
+#lifepanel{position:absolute;top:66px;right:16px;width:380px;max-width:calc(100vw - 32px);max-height:calc(100vh / var(--z) - 110px);overflow:auto;padding:14px 16px;z-index:4;font-size:13px}
+#lifepanel.hide{display:none}
+#lifepanel .top{display:flex;justify-content:space-between;align-items:center}
+#lifepanel h3{margin:0;font-size:15px;font-weight:600}
+#lifepanel h4{margin:12px 0 4px;font-size:13px;font-weight:600}
+#lifepanel .cite{font-size:11.5px;color:var(--muted)}
+#lifepanel .rv-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+#lifepanel select{background:#1f232b;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 6px;font:12.5px Inter,sans-serif}
+#lifepanel .bar{position:relative;height:10px;border-radius:5px;background:#262b35;overflow:hidden;margin:3px 0 2px}
+#lifepanel .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+#lifeTank{background:#7ee2ff}#lifeBel{background:linear-gradient(90deg,#57c785,#ffd36b)}
+#lifepanel .barrow{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:8px}
+#lifepanel .barrow b{color:var(--text)}
+#lifeInst{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
+#lifeInst button{text-align:left;padding:7px 9px;border-radius:9px;border:1px solid var(--line);background:#1d2129;color:var(--text);font:500 12.5px Inter,sans-serif;cursor:pointer;line-height:1.25}
+#lifeInst button:hover:not(:disabled){background:#2a2f3a}
+#lifeInst small{display:block;color:var(--muted);font-weight:400;font-size:11px;margin-top:2px}
+#lifeSuggest{color:#ffd36b;font-size:12.5px;margin:6px 0}
+#lifeLog{max-height:220px;overflow:auto;font-size:12px;color:#cfd6e0;padding-left:18px;margin:4px 0}
+#lifeLog li{margin:4px 0}
+#lifepanel b.up{color:#57c785}#lifepanel b.down{color:#ff9a3c}
+#lifeCmp table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0;font-variant-numeric:tabular-nums}
+#lifeCmp th,#lifeCmp td{padding:3px 4px;text-align:right;border-bottom:1px solid var(--line)}
+#lifeCmp th:first-child,#lifeCmp td:first-child{text-align:left}
+#lifepanel a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}#lifepanel a:hover{color:#c6dafc}
+#lifepanel code{font-size:11.5px;color:#e9edf3}
+#lifepanel details{margin-top:10px;font-size:12px;color:#cfd6e0}
+#lifepanel details summary{cursor:pointer;color:var(--text);font-weight:500}
+#lifepanel details ul{padding-left:18px;margin:6px 0}
+#lifepanel details li{margin:3px 0}
 #loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);z-index:10;pointer-events:none;transition:opacity .6s}
-@media (max-width:640px){
-  #search{width:auto;right:16px}
-  #info{top:auto;bottom:150px;left:16px;right:16px;width:auto;max-height:40vh}
-  .layerbtn{width:60px;height:60px}
-  #layers{flex-wrap:wrap;right:72px}
-  #opts{min-width:0;width:100%;order:-1;padding:8px 12px}
-  #credit{display:none}
-  #brand{bottom:auto;top:122px}
-  #brand img{height:16px}
-  #chips{top:72px;max-width:none;left:16px}
-  .chip{height:36px;padding:0 12px;font-size:13px}
-  #icepanel,#insidepanel{top:116px;max-height:45vh}
-  #section{width:auto;right:16px;bottom:34px}
-  #section svg{height:180px}
+/* ---------- every screen size ---------- */
+#optsBtn{display:none;background:var(--panel-solid);color:var(--text)}
+#optsBtn svg{display:block;margin:10px auto 0}
+body.walking #layers,body.walking #ctrls{display:none}
+#walkhud .pad,#walkhud .row button{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#walkhud .pad button{font-size:16px}
+#walkhud .help.touch{display:none}
+@media (pointer:coarse){
+  #walkhud .help.keys{display:none}#walkhud .help.touch{display:block}
+  #cursor{display:none}
+  .chip,#ctrls button,.iconbtn{touch-action:manipulation}
 }
+/* tablets and narrow windows: the chips get their own scrolling row under the search box, the logo moves into the status strip */
+@media (max-width:1100px){
+  #chips{top:72px;left:16px;right:16px;max-width:none;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:0 0 2px}
+  #chips::-webkit-scrollbar{display:none}
+  .chip{flex:none}
+  #info{top:124px;max-height:calc(100vh / var(--z) - 210px)}
+  #icepanel,#insidepanel{top:124px;max-height:max(220px,calc(100vh / var(--z) - 420px))}
+  #roverpanel,#lifepanel{top:124px;max-height:calc(100vh / var(--z) - 170px)}
+  #sechint,#divehint,#landhint,#roverhint,#lifehint{top:124px}
+  #brand{left:12px;bottom:6px;transform:none;opacity:.95;z-index:4}
+  #brand img{height:15px;filter:none}
+  #credit{padding-left:130px}
+}
+/* phones: panels become bottom sheets, the map options fold behind an Options button */
+@media (max-width:640px){
+  #search{top:12px;left:12px;right:12px;width:auto;max-width:none}
+  #search .bar{height:44px}
+  #chips{top:64px;left:12px;right:12px;gap:6px}
+  .chip{height:36px;padding:0 12px;font-size:13px}
+  #credit{display:none}
+  #status{gap:12px;padding:0 10px}
+  #info,#icepanel,#insidepanel,#section,#walkhud,#roverpanel,#lifepanel{top:auto;left:8px;right:8px;bottom:34px;width:auto;max-width:none;max-height:min(55vh,calc(100vh - 170px));overflow:auto;z-index:7;border-radius:14px}
+  #info{padding:16px 14px}
+  #info h2{font-size:19px;padding-right:30px}
+  #section{padding:10px 12px}
+  #section .head span{flex-basis:100%;order:5;font-size:12px}
+  #section svg{height:150px}
+  #section .keys{gap:8px 12px;font-size:11px}
+  #sechint,#divehint,#landhint,#roverhint,#lifehint{top:110px;left:12px;right:12px;margin:0 auto;transform:none;width:fit-content;max-width:none;white-space:normal;font-size:13px;padding:8px 10px;gap:8px}
+  #sechint span,#divehint #divehintText,#landhint>span,#roverhint>span,#lifehint>span{flex-basis:100%;text-align:center}
+  #layers{left:12px;bottom:36px;gap:6px}
+  .layerbtn{width:52px;height:52px}
+  .layerbtn span{font-size:10px}
+  #ctrls{right:12px;bottom:36px;gap:6px}
+  #walkhud h3{font-size:14px;margin-bottom:4px}
+  #walkhud dl{font-size:12px;margin-bottom:4px}
+  #walkhud .row button{padding:7px 11px}
+  #walkhud .pad{grid-template-columns:repeat(3,56px);gap:6px}
+  #walkhud .pad button{padding:12px 0}
+}
+@media (max-width:640px),(max-height:520px){
+  #optsBtn{display:block}
+  #opts{display:none;position:absolute;left:0;bottom:calc(100% + 8px);width:min(300px,calc(100vw - 88px));min-width:0;padding:10px 12px;z-index:5}
+  #opts.open{display:block}
+}
+/* short screens (a phone on its side): chips beside the search box, everything slimmer */
+@media (max-height:520px){
+  #search{top:8px}
+  #search .bar{height:40px}
+  #results{max-height:calc(100vh - 70px)}
+  #info{top:56px;max-height:calc(100vh - 100px)}
+  #icepanel,#insidepanel,#roverpanel,#lifepanel{top:56px;right:64px;max-height:calc(100vh - 100px)}
+  #sechint,#divehint,#landhint,#roverhint,#lifehint{top:56px}
+  #section{bottom:32px;max-height:calc(100vh - 44px);overflow:auto}
+  #section svg{height:110px}
+  #layers{bottom:34px}
+  .layerbtn{width:46px;height:46px}
+  .layerbtn span{font-size:9.5px;padding:2px 0}
+  #ctrls{bottom:34px;gap:5px}
+  #ctrls button{width:36px;height:36px;font-size:17px}
+  #walkhud{bottom:32px;max-height:calc(100vh - 44px);overflow:auto;padding:8px 12px;width:auto;max-width:calc(100vw - 24px)}
+  #walkhud dl,#walkhud .help,#walkhud h3{display:none}
+  #walkhud .body{display:flex;gap:12px;align-items:center}
+  #walkhud .row{max-width:300px}
+}
+@media (max-height:520px) and (min-width:641px){
+  #search{width:340px}
+  #chips{top:8px;left:368px;right:12px}
+}
+@media (max-height:520px) and (max-width:640px){
+  #chips{top:58px}
+}
+/* big monitors: scale the controls up so they stay comfortable to read */
+@media (min-width:1800px) and (min-height:1000px){
+  :root{--z:1.15}
+  #search,#info,#chips,#layers,#ctrls,#icepanel,#insidepanel,#section,#sechint,#divehint,#landhint,#walkhud,#roverhint,#roverpanel,#lifehint,#lifepanel,#status,#brand{zoom:var(--z)}
+}
+@media (min-width:2500px) and (min-height:1350px){ :root{--z:1.4} }
 </style>
 </head>
 <body>
@@ -156,6 +313,9 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
   <button class="chip" id="chipSec" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M3 21h18"/></svg>Cross-section</button>
   <button class="chip" id="chipInside" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>Look inside</button>
   <button class="chip" id="chipDive" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 15c2 0 2-1.5 4-1.5S8 15 10 15s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M2 20c2 0 2-1.5 4-1.5S8 20 10 20s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><circle cx="12" cy="6" r="3"/></svg>Dive</button>
+  <button class="chip" id="chipLand" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg>Land</button>
+  <button class="chip" id="chipRover" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="7" rx="1.5"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M12 8V4h4"/></svg>Rover ops</button>
+  <button class="chip" id="chipLife" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6"/><path d="M10 3v6L5 19a1.5 1.5 0 0 0 1.3 2h11.4A1.5 1.5 0 0 0 19 19l-5-10V3"/><path d="M7.5 14h9"/></svg>Life detection</button>
 </div>
 <div class="card" id="divehint"><span id="divehintText">Click a spot on the moon to dive into the ocean below it</span><span class="modes"><button id="diveScuba" class="go">Scuba</button><button id="diveSub">Submarine</button></span><button class="go" id="diveStripes">Dive under the tiger stripes</button><button id="diveCancel">Cancel</button></div>
 <div class="card hide" id="insidepanel">
@@ -202,6 +362,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
   <button class="layerbtn active" data-layer="mosaic"><img src="tiles/mosaic/0/1/0.jpg" alt=""><span>Imagery</span></button>
   <button class="layerbtn" data-layer="relief"><img src="tiles/relief/0/1/0.jpg" alt=""><span>Topography</span></button>
   <button class="layerbtn" data-layer="hybrid"><img src="tiles/mosaic/0/0/0.jpg" alt=""><span>Hybrid</span></button>
+  <button class="layerbtn" id="optsBtn" aria-expanded="false" aria-controls="opts"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>Options</span></button>
   <div class="card" id="opts">
     <label><input type="checkbox" id="optLabels" checked> Feature names</label>
     <label><input type="checkbox" id="optJets" checked> Plume jet sources (100)</label>
@@ -220,8 +381,93 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 </div>
 
 <a id="brand" href="https://spaceoceancorp.com" target="_blank" rel="noopener" aria-label="Space Ocean Corp"><img src="spaceocean-wordmark-white.png" alt="Space Ocean Corp"></a>
+<div class="card" id="landhint"><span>Click a spot on the moon to land there</span><button class="go" id="landStripes">Land at the tiger stripes</button><button id="landSaturn">Land under Saturn</button><button id="landCancel">Cancel</button></div>
+<div class="card hide" id="walkhud">
+  <h3>On the surface of Enceladus</h3>
+  <dl><dt>Position</dt><dd id="walkpos"></dd><dt>Ground</dt><dd id="walkelev"></dd><dt>You are</dt><dd id="walkhop"></dd><dt>Sky</dt><dd id="walksat"></dd></dl>
+  <div class="body">
+    <div class="row"><button data-mode="walk" class="go">Walk</button><button data-mode="rover">Rover</button><button data-mode="skim">Skim</button><button id="walkFast" aria-pressed="false">Fast</button><button id="walkJump">Jump</button><button id="walkSat">Look at Saturn</button><button id="walkExit">Back to orbit</button></div>
+    <div class="pad"><button data-k="arrowleft" aria-label="Turn left">⟲</button><button data-k="w" aria-label="Forward">▲</button><button data-k="arrowright" aria-label="Turn right">⟳</button><button data-k="a" aria-label="Step left">◀</button><button data-k="s" aria-label="Back">▼</button><button data-k="d" aria-label="Step right">▶</button></div>
+  </div>
+  <p class="help keys">W/S or ↑/↓ move · A/D step sideways · ←/→ or drag to look · Shift go faster · Space jump (gravity is 1/87 of Earth's) · Esc leave</p>
+  <p class="help touch">Drag the view to look around. Hold the arrows to move. Gravity is 1/87 of Earth's, so jumps last a long time.</p>
+</div>
+<div class="card" id="roverhint"><span>Click a spot on the moon to set up a 19 km rover work area there</span><button class="go" id="roverStripes">Between Baghdad and Damascus</button><button id="roverCancel">Cancel</button></div>
+<div class="card hide" id="roverpanel">
+  <div class="top"><h3>Rover ops</h3><button class="iconbtn" id="roverClose" aria-label="Close">&#10005;</button></div>
+  <p id="roverLoading">Loading the terrain…</p>
+  <div id="roverBody" class="hide">
+    <p class="cite" id="roverArea"></p>
+    <div><b id="roverTime"></b></div>
+    <div class="seg" id="roverSpeed"><button data-s="0" title="Stop the mission clock">Pause</button><button data-s="1" title="1 hour of mission time every real second">1 h/s</button><button data-s="6" class="on" title="6 hours of mission time every real second">6 h/s</button><button data-s="24" title="1 day of mission time every real second">1 day/s</button></div>
+    <p class="cite" style="margin:0 0 4px">Clock speed: mission time per real second. The rover drives about 120 m an hour and parks to recharge, so a 4-target plan takes around 5 weeks of mission time, about 2 minutes at 6 h/s or 35 seconds at 1 day/s.</p>
+    <dl>
+      <dt>Earth</dt><dd id="roverEarth"></dd>
+      <dt>Signal delay</dt><dd id="roverLT"></dd>
+      <dt>Rover</dt><dd id="roverState"></dd>
+      <dt>Battery</dt><dd id="roverBatt"></dd>
+      <dt>Driven</dt><dd id="roverOdo"></dd>
+      <dt>Last heard</dt><dd id="roverHeard"></dd>
+    </dl>
+    <h4>Plan</h4>
+    <p class="cite">Click the ground inside the blue square to add targets in order, or let the planner suggest some. The dashed blue line is the route A* finds around fractures and steep ground.</p>
+    <div id="roverFlash"></div>
+    <ol id="roverTargets"></ol>
+    <p class="cite" id="roverPlanSum"></p>
+    <div class="rv-row"><button id="roverSuggest">Suggest targets</button><button id="roverClear">Clear</button><button id="roverSend" class="go" disabled>Send to rover</button></div>
+    <p id="roverUplink"></p>
+    <div class="rv-row"><label><input type="checkbox" id="roverAuto" checked> When the plan is done and Earth hasn't sent another, the rover may pick up to 2 targets itself</label></div>
+    <h4>Map</h4>
+    <div class="seg" id="roverMap"><button data-m="cost" class="on">Driving cost</button><button data-m="sci">Science interest</button><button data-m="off">Off</button></div>
+    <div id="roverLegend"></div>
+    <h4>Log</h4>
+    <ol id="roverLog"></ol>
+    <div class="rv-row"><button class="lnk" id="roverSummary">Mission summary</button><button class="lnk" id="roverMove">Choose another area</button></div>
+    <div id="roverSumText"></div>
+    <details><summary>What is real here and what is made up</summary>
+      <ul>
+        <li><b>Real:</b> the ground heights and slopes (Schenk &amp; McKinnon 2024 DEM, points about 390 m apart); the tiger stripes (a line drawn through each stripe's jet sources from Porco et al. 2014, so it is approximate); where Earth is in the sky, its rising and setting, Saturn hiding it once every 33-hour orbit, and the 71–84 minute one-way signal delay (JPL Horizons, Nov 2026 to Dec 2027).</li>
+        <li><b>Assumed or made up:</b> the rover itself (no Enceladus rover is planned); its speed of 120 m/h, its 25° slope limit (Perseverance is rated for 30°), and its power (a 110 W RTG and a 2.4 kWh battery, borrowed from Perseverance); a 2 km no-go band along each stripe; slower driving within 1.5 km of a jet; the science-interest score; an antenna horizon of 5° with no hills blocking the view; Earth-side antennas always available.</li>
+        <li>The route planner and the rover picking its own targets follow ideas from <a href="https://github.com/ajmcastro/space-mission-control-center" target="_blank" rel="noopener">space-mission-control-center</a> by ajmcastro (MIT licence).</li>
+      </ul>
+    </details>
+  </div>
+</div>
+<div class="card" id="lifehint"><span>Click a spot on the moon to land the Orbilander there</span><button class="go" id="lifeStripes">Land near the tiger stripes</button><button id="lifeCancel">Cancel</button></div>
+<div class="card hide" id="lifepanel">
+  <div class="top"><h3>Life detection</h3><button class="iconbtn" id="lifeClose" aria-label="Close">&#10005;</button></div>
+  <p class="cite">NASA's proposed Enceladus Orbilander would land and test plume fallout for signs of life. Here you run its proposed Life Detection Suite. The model and every number come from <a href="https://github.com/sisl/LifeDetection" target="_blank" rel="noopener">sisl/LifeDetection</a> (Stanford SISL with NASA Ames; <a href="https://arxiv.org/abs/2510.08812" target="_blank" rel="noopener">Kim et al. 2025</a>).</p>
+  <p class="cite" id="lifeSite"></p>
+  <div class="barrow"><span>Sample in the tank</span><b id="lifeTankV"></b></div>
+  <div class="bar"><i id="lifeTank"></i></div>
+  <div class="barrow"><span>Chance of life, given the readings so far</span><b id="lifeBelV"></b></div>
+  <div class="bar"><i id="lifeBel"></i></div>
+  <p class="cite" id="lifeStatus"></p>
+  <h4>Instruments</h4>
+  <div id="lifeInst"></div>
+  <div class="rv-row"><button id="lifeCollect">Collect fallout</button><button id="lifeYes">Declare: life</button><button id="lifeNo">Declare: no life</button></div>
+  <p id="lifeSuggest"></p>
+  <h4>Let it run</h4>
+  <div class="rv-row"><button id="lifeAutoC">Mission baseline (ConOps)</button><button id="lifeAutoL">One-step lookahead</button><button id="lifeAutoStop">Stop</button></div>
+  <div class="rv-row"><button id="lifeNew">New sample</button><label class="cite">Truth: <select id="lifeTruth"><option value="random">Random (10% life)</option><option value="life">Life present</option><option value="none">No life</option></select></label></div>
+  <h4>Readings</h4>
+  <ol id="lifeLog" reversed></ol>
+  <h4>Compare the strategies</h4>
+  <div class="rv-row"><button id="lifeCompare">Run 500 landings each</button></div>
+  <div id="lifeCmp"></div>
+  <div class="rv-row"><button class="lnk" id="lifeMove">Land somewhere else</button></div>
+  <details><summary>Where every number comes from</summary>
+    <ul>
+      <li><b>Chance of life before any reading (10%), and how likely each reading is with and without life:</b> <a href="https://github.com/sisl/LifeDetection/blob/main/src/bayes_net.jl" target="_blank" rel="noopener">src/bayes_net.jl</a>. Curves are cut into bins as in <a href="https://github.com/sisl/LifeDetection/blob/main/src/common/bayes_net_helpers.jl" target="_blank" rel="noopener">src/common/bayes_net_helpers.jl</a>.</li>
+      <li><b>The six instruments, what each measures, the sample each uses, the 500-unit tank and fallout of about 270 units per collection (±25%):</b> <a href="https://github.com/sisl/LifeDetection/blob/main/src/LifeDetectionPOMDP.jl" target="_blank" rel="noopener">src/LifeDetectionPOMDP.jl</a>. Units are the repo's scaled sample units.</li>
+      <li><b>The mission baseline (ConOps) and the 99.9% / 0.1% thresholds for declaring:</b> <code>conops_orbiter</code> and <code>simulate_policyVLD</code> in <a href="https://github.com/sisl/LifeDetection/blob/main/src/common/simulate.jl" target="_blank" rel="noopener">src/common/simulate.jl</a>.</li>
+      <li><b>Different from the repo:</b> whether life is present stays fixed for the whole landing (the repo redraws it with each new batch of fallout), and the one-step lookahead is ours. The paper's planner (SARSOP) is not run here.</li>
+      <li>The probabilities are the authors' modelling assumptions, not measurements. The repo has no licence, so its code is not copied; the model is rebuilt here from its published numbers.</li>
+    </ul>
+  </details>
+</div>
 <div id="status">
-  <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
+  <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · Saturn: Solar System Scope (CC BY 4.0) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
   <span id="scale"><i></i><span></span></span>
   <span id="cursor">—</span>
   <span id="cam"></span>
@@ -335,6 +581,7 @@ function clampDisc() {
 }
 const cv = scene.canvas;
 cv.addEventListener('pointerdown', e => {
+  if (typeof walk !== 'undefined' && walk.on) return;   // on the surface, dragging looks around instead
   if (e.button !== 0 || e.ctrlKey || e.altKey || drag.id !== null) return;
   const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
   const hit = !e.shiftKey && hitsGlobe(x, y);
@@ -373,6 +620,7 @@ cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', 
 // Two-finger touch belongs to Cesium's pinch zoom and tilt.
 cv.addEventListener('touchstart', e => { if (e.touches.length > 1) { drag.id = null; drag.mode = null; drag.pendX = drag.pendY = 0; } }, { passive: true });
 scene.preRender.addEventListener(() => {
+  if (typeof walk !== 'undefined' && walk.on) return;
   if (drag.mode === 'spin' || drag.mode === 'move') {
     // Ease toward the pointer instead of jumping: apply half of what is pending each frame.
     const sx = drag.pendX * 0.5, sy = drag.pendY * 0.5;
@@ -411,7 +659,7 @@ grid.show = false;
 function setLayer(name) {
   mosaic.show = name !== 'relief'; relief.show = name !== 'mosaic';
   if (hires) hires.show = mosaic.show && document.getElementById('optHires').checked; relief.alpha = name === 'hybrid' ? 0.45 : 1;
-  document.querySelectorAll('.layerbtn').forEach(b => b.classList.toggle('active', b.dataset.layer === name));
+  document.querySelectorAll('.layerbtn[data-layer]').forEach(b => b.classList.toggle('active', b.dataset.layer === name));
   state.layer = name; writeHash();
 }
 
@@ -549,6 +797,11 @@ function refreshDot(o) {
 }
 function markSelected(o) { const old = selected; selected = o; refreshDot(old); refreshDot(o); }
 handler.setInputAction(e => {
+  if (walk.picking) { walk.pick(e.position); return; }
+  if (walk.on) return;
+  if (rover.picking) { rover.pickArea(e.position); return; }
+  if (rover.on) { rover.click(e.position); return; }
+  if (life.picking) { life.pickSite(e.position); return; }
   if (dive.picking) { dive.pick(e.position); return; }
   if (inside.picking) { inside.pick(e.position); return; }
   if (section.picking) { section.addPoint(e.position); return; }
@@ -559,6 +812,7 @@ handler.setInputAction(e => {
 // Double-click always zooms in toward the spot under the pointer, like a web map.
 viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(C.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 handler.setInputAction(e => {
+  if (walk.on) return;
   const ray = camera.getPickRay(e.position); if (!ray) return;
   const target = globe.pick(ray, scene) || camera.pickEllipsoid(e.position, E); if (!target) return;
   const dist = C.Cartesian3.distance(camera.positionWC, target);
@@ -617,7 +871,11 @@ function pick(o) { q.value = o.name; res.classList.remove('open'); flyTo(o, fals
 document.getElementById('clearq').onclick = () => { q.value = ''; render(); closeInfo(); };
 
 // ---------- options ----------
-document.querySelectorAll('.layerbtn').forEach(b => b.onclick = () => setLayer(b.dataset.layer));
+document.querySelectorAll('.layerbtn[data-layer]').forEach(b => b.onclick = () => setLayer(b.dataset.layer));
+// small screens: the map options fold away behind the Options button; tapping the moon closes them again
+const optsEl = document.getElementById('opts'), optsBtn = document.getElementById('optsBtn');
+optsBtn.onclick = e => { e.stopPropagation(); const o = optsEl.classList.toggle('open'); optsBtn.classList.toggle('active', o); optsBtn.setAttribute('aria-expanded', o); };
+cv.addEventListener('pointerdown', () => { if (optsEl.classList.contains('open')) { optsEl.classList.remove('open'); optsBtn.classList.remove('active'); optsBtn.setAttribute('aria-expanded', false); } });
 document.getElementById('optLabels').onchange = e => { labelSrc.show = e.target.checked; };
 document.getElementById('optJets').onchange = e => { jetSrc.show = e.target.checked; };
 document.getElementById('optHires').onchange = e => { areaSrc.show = e.target.checked; if (hires) hires.show = e.target.checked && mosaic.show; };
@@ -1122,7 +1380,13 @@ if (INT) {
   $('diveSub').onclick = () => setDiveMode('sub');
 } else $('chipDive').classList.add('hide');
 
+/*__WALK__*/
+/*__ROVER__*/
+/*__LIFE__*/
+window.encRover = rover;
+window.encLife = life;
 window.encViewer = viewer;
+window.encWalk = walk;
 })();
 </script>
 </body>
