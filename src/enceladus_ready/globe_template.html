@@ -199,6 +199,25 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #lifepanel details li{margin:3px 0}
 #info .photo{display:block;width:100%;border-radius:8px;margin:8px 0 6px;background:#000;cursor:zoom-in}
 #info .photocredit{font-size:11.5px;color:var(--muted);margin:0 0 8px}
+#chipTour{background:var(--accent);color:#0b1220;border-color:var(--accent);font-weight:600}
+#chipTour.on{background:#e9edf3;border-color:#e9edf3}
+#tourpanel{position:absolute;left:50%;transform:translateX(-50%);bottom:40px;width:min(480px,calc(100vw - 32px));z-index:8;padding:14px 16px 12px;background:rgba(16,18,24,.95);color:#f2f5f9;font:13.5px/1.5 Inter,sans-serif}
+#tourpanel.hide{display:none}
+#tourpanel .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#tourStep{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+#tourTitle{margin:2px 0 6px;font:600 16px Inter,sans-serif}
+#tourText{margin:0 0 8px;color:#dfe5ee}
+#tourText b{color:#fff}
+#tourActions,#tourNav{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+#tourNav{justify-content:space-between;margin-top:10px}
+#tourpanel button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:16px;padding:6px 12px;font:500 13px Inter,sans-serif;cursor:pointer}
+#tourpanel button:hover:not(:disabled){background:#323947}
+#tourpanel button.go,#tourNext{background:#e9edf3;color:#0b1220;font-weight:600}
+#tourpanel button:disabled{opacity:.4;cursor:default}
+#tourDots{display:flex;gap:5px}
+#tourDots i{width:7px;height:7px;border-radius:50%;background:#3a404c}
+#tourDots i.on{background:var(--accent)}#tourDots i.done{background:#6f7d96}
+body.touring #layers{display:none}
 #loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);z-index:10;pointer-events:none;transition:opacity .6s}
 /* ---------- every screen size ---------- */
 #optsBtn{display:none;background:var(--panel-solid);color:var(--text)}
@@ -225,6 +244,11 @@ body.walking #layers,body.walking #ctrls{display:none}
   #brand img{height:15px;filter:none}
   #credit{padding-left:130px}
 }
+/* tablets and narrow windows while touring: the tour card runs along the bottom, the other panels stop above it */
+@media (max-width:1100px) and (min-width:641px) and (min-height:521px){
+  #tourpanel{left:16px;right:16px;width:auto;transform:none;bottom:34px;max-height:230px;overflow:auto}
+  body.touring #info,body.touring #roverpanel,body.touring #lifepanel,body.touring #insidepanel,body.touring #icepanel{max-height:max(160px,calc(100vh / var(--z) - 400px))}
+}
 /* phones: panels become bottom sheets, the map options fold behind an Options button */
 @media (max-width:640px){
   #search{top:12px;left:12px;right:12px;width:auto;max-width:none}
@@ -240,6 +264,9 @@ body.walking #layers,body.walking #ctrls{display:none}
   #section .head span{flex-basis:100%;order:5;font-size:12px}
   #section svg{height:150px}
   #section .keys{gap:8px 12px;font-size:11px}
+  #tourpanel{top:108px;bottom:auto;left:8px;right:8px;width:auto;transform:none;max-height:30vh;overflow:auto;padding:10px 12px;font-size:12.5px}
+  body.touring #info,body.touring #roverpanel,body.touring #lifepanel,body.touring #insidepanel,body.touring #icepanel{max-height:min(40vh,calc(100vh - 30vh - 190px))}
+  #tourTitle{font-size:14.5px}
   #sechint,#divehint,#landhint,#roverhint,#lifehint{top:110px;left:12px;right:12px;margin:0 auto;transform:none;width:fit-content;max-width:none;white-space:normal;font-size:13px;padding:8px 10px;gap:8px}
   #sechint span,#divehint #divehintText,#landhint>span,#roverhint>span,#lifehint>span{flex-basis:100%;text-align:center}
   #layers{left:12px;bottom:36px;gap:6px}
@@ -287,7 +314,7 @@ body.walking #layers,body.walking #ctrls{display:none}
 /* big monitors: scale the controls up so they stay comfortable to read */
 @media (min-width:1800px) and (min-height:1000px){
   :root{--z:1.15}
-  #search,#info,#chips,#layers,#ctrls,#icepanel,#insidepanel,#section,#sechint,#divehint,#landhint,#walkhud,#roverhint,#roverpanel,#lifehint,#lifepanel,#status,#brand{zoom:var(--z)}
+  #search,#info,#chips,#layers,#ctrls,#icepanel,#insidepanel,#section,#sechint,#divehint,#landhint,#walkhud,#roverhint,#roverpanel,#lifehint,#lifepanel,#tourpanel,#status,#brand{zoom:var(--z)}
 }
 @media (min-width:2500px) and (min-height:1350px){ :root{--z:1.4} }
 </style>
@@ -311,6 +338,7 @@ body.walking #layers,body.walking #ctrls{display:none}
 </div>
 
 <div id="chips">
+  <button class="chip" id="chipTour" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z" fill="currentColor"/></svg>Take the tour</button>
   <button class="chip" id="chipIce" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2v20M5 5l14 14M19 5L5 19"/></svg>Ice thickness</button>
   <button class="chip" id="chipSec" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M3 21h18"/></svg>Cross-section</button>
   <button class="chip" id="chipInside" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>Look inside</button>
@@ -468,6 +496,13 @@ body.walking #layers,body.walking #ctrls{display:none}
       <li>The probabilities are the authors' modelling assumptions, not measurements. The repo has no licence, so its code is not copied; the model is rebuilt here from its published numbers.</li>
     </ul>
   </details>
+</div>
+<div class="card hide" id="tourpanel" role="dialog" aria-label="Guided tour">
+  <div class="top"><span id="tourStep"></span><span id="tourDots"></span><button class="iconbtn" id="tourClose" aria-label="End the tour">&#10005;</button></div>
+  <h3 id="tourTitle"></h3>
+  <p id="tourText"></p>
+  <div id="tourActions"></div>
+  <div id="tourNav"><button id="tourBack">Back</button><button id="tourNext">Next</button></div>
 </div>
 <div id="status">
   <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · Photos: NASA/JPL-Caltech/SSI · Saturn: Solar System Scope (CC BY 4.0) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
@@ -1420,6 +1455,8 @@ if (INT) {
 /*__WALK__*/
 /*__ROVER__*/
 /*__LIFE__*/
+/*__TOUR__*/
+window.encTour = tour;
 window.encRover = rover;
 window.encLife = life;
 window.encViewer = viewer;
