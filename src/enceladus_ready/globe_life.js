@@ -361,13 +361,27 @@ const life = (() => {
   // ---- pins, copying coordinates, export ----
   let toastT = null;
   function toast(t) { $('lifeToast').textContent = t; clearTimeout(toastT); toastT = setTimeout(() => { $('lifeToast').textContent = ''; }, 3500); }
-  async function copy(text, what) {
-    try { await navigator.clipboard.writeText(text); toast(`Copied ${what}: ${text.length > 60 ? text.slice(0, 57) + '…' : text}`); }
-    catch (_) {   // clipboard can be blocked (no permission, insecure origin): fall back to a hidden textarea
-      const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select();
-      let ok = false; try { ok = document.execCommand('copy'); } catch (_) {} t.remove();
-      toast(ok ? `Copied ${what}.` : `Could not reach the clipboard. ${what}: ${text}`);
-    }
+  function flash(btn, msg) {   // feedback on the button itself, since the toast line sits far down the panel
+    if (!btn) return;
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+    btn.textContent = msg; clearTimeout(btn._t); btn._t = setTimeout(() => { btn.textContent = btn.dataset.label; delete btn.dataset.label; }, 1600);
+  }
+  // Copy synchronously first, while the click still counts as a user gesture; the async Clipboard API is only a
+  // fallback, because some browsers refuse it ("write permission denied") and by the time it fails the gesture is gone.
+  function copy(text, what, btn) {
+    const done = ok => {
+      flash(btn, ok ? 'Copied ✓' : 'Copy failed');
+      toast(ok ? `Copied ${what}: ${text.length > 60 ? text.slice(0, 57) + '…' : text}` : `Could not reach the clipboard. ${what}: ${text}`);
+      if (!ok) window.prompt(`Copy ${what} (Ctrl+C, then Enter):`, text);
+    };
+    const t = document.createElement('textarea');
+    t.value = text; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(t); t.focus(); t.select(); t.setSelectionRange(0, text.length);
+    let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+    t.remove(); if (btn) btn.focus({ preventScroll: true });
+    if (ok) return done(true);
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done(true), () => done(false));
+    else done(false);
   }
   function savePins() { try { localStorage.setItem('enc.life.pins', JSON.stringify(pins)); } catch (_) {} }
   function loadPins() {
@@ -448,14 +462,14 @@ const life = (() => {
   $('lifeNew').onclick = newRun;
   $('lifeAutoC').onclick = () => autoRun('conops');
   $('lifeAutoL').onclick = () => autoRun('lookahead');
-  $('lifeCopySite').onclick = () => site && copy(llPlain(site.la, site.lo), 'site lat, lon');
+  $('lifeCopySite').onclick = () => site && copy(llPlain(site.la, site.lo), 'site lat, lon', $('lifeCopySite'));
   $('lifePinSite').onclick = () => site && addPin(site.la, site.lo);
   $('lifePinMode').onclick = () => setPinning(!pinning);
-  $('lifeCopyPins').onclick = () => copy(pins.map(p => `Pin ${p.n}\t${llPlain(p.lat, p.lon)}`).join('\n'), `${pins.length} pin${pins.length === 1 ? '' : 's'}`);
+  $('lifeCopyPins').onclick = () => copy(pins.map(p => `Pin ${p.n}\t${llPlain(p.lat, p.lon)}`).join('\n'), `${pins.length} pin${pins.length === 1 ? '' : 's'}`, $('lifeCopyPins'));
   $('lifeClearPins').onclick = () => { if (confirm(`Remove all ${pins.length} pins?`)) { pins = []; pinSeq = 0; savePins(); renderPins(); drawPins(); } };
   $('lifePins').onclick = e => {
     const b = e.target.closest('button'); if (!b) return; const p = pins[+b.dataset.i]; if (!p) return;
-    if (b.dataset.a === 'copy') copy(llPlain(p.lat, p.lon), `pin ${p.n} lat, lon`);
+    if (b.dataset.a === 'copy') copy(llPlain(p.lat, p.lon), `pin ${p.n} lat, lon`, b);
     else if (b.dataset.a === 'land') { setPinning(false); open(p.lat, p.lon); }
     else if (b.dataset.a === 'del') { pins.splice(+b.dataset.i, 1); savePins(); renderPins(); drawPins(); }
   };
