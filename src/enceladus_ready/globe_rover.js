@@ -507,6 +507,7 @@ const rover = (() => {
   }
   async function open(la, lo) {
     cancel(); $('roverhint').classList.remove('open'); $('chipRover').classList.add('on');
+    if (typeof life !== 'undefined' && life.on) life.close();
     $('roverpanel').classList.remove('hide'); $('icepanel').classList.add('hide'); $('roverBody').classList.add('hide'); $('roverLoading').classList.remove('hide');
     if (!on) { savedEx = scene.verticalExaggeration; exag.disabled = true; }
     on = true; document.body.classList.add('roverops');

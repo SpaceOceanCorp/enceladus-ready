@@ -202,6 +202,7 @@ const life = (() => {
   }
   async function open(la, lo) {
     cancel(); $('chipLife').classList.add('on');
+    if (rover.on) rover.close();
     if (!TABLES) buildTables();
     on = true; site = { la, lo };
     $('lifepanel').classList.remove('hide'); $('icepanel').classList.add('hide');
