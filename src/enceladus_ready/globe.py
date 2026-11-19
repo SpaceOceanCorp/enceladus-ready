@@ -212,6 +212,8 @@ def build_page(mosaic_max=5, relief_max=5):
     html = html.replace("__BUILD__", str(int(time.time())))  # cache-busts dive.js
     # surface mode (land, walk, rover, skim) lives in its own file and is inlined into the page script
     html = html.replace("/*__WALK__*/", Path(__file__).with_name("globe_walk.js").read_text(encoding="utf8"))
+    # rover ops (plan and run a traverse with Earth contact windows) is inlined the same way
+    html = html.replace("/*__ROVER__*/", Path(__file__).with_name("globe_rover.js").read_text(encoding="utf8"))
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "index.html").write_text(html, encoding="utf8")
     (OUT / "dive.js").write_text(Path(__file__).with_name("globe_dive.js").read_text(encoding="utf8"), encoding="utf8")
