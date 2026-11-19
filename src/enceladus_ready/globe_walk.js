@@ -60,6 +60,7 @@ const walk = {
     const L = Math.max(0, 1 - (now - this.landing) / 3000), drop = 1500 * L * L;
     camera.setView({ destination: C.Cartesian3.fromRadians(this.lon, this.lat, ground + this.EYE[m] + this.z + drop, E),
       orientation: { heading: this.head, pitch: this.pitch - 0.9 * L, roll: 0 } });
+    placeSky();
     if (!this._h || now - this._h > 250) { this._h = now; this.hud(); }
   },
   hud() {
@@ -79,7 +80,7 @@ function sky(on) {
   if (scene.skyBox) scene.skyBox.show = on;
   if (on && !skyObjs) {
     const M = C.Matrix4.fromTranslation(new C.Cartesian3(SATURN_D, 0, 0));
-    const planet = scene.primitives.add(new C.Primitive({ modelMatrix: M, asynchronous: false,
+    const planet = scene.primitives.add(new C.Primitive({ modelMatrix: M, asynchronous: false, cull: false,
       geometryInstances: new C.GeometryInstance({ geometry: new C.EllipsoidGeometry({ radii: new C.Cartesian3(SATURN_R, SATURN_R, SATURN_R * 0.902),
         vertexFormat: C.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat, slicePartitions: 96, stackPartitions: 48 }) }),
       appearance: new C.MaterialAppearance({ material: C.Material.fromType('Image', { image: 'saturn.jpg' }), flat: true, materialSupport: C.MaterialAppearance.MaterialSupport.TEXTURED }) }));
@@ -89,7 +90,7 @@ function sky(on) {
       pos.push(r0 * Math.cos(a), r0 * Math.sin(a), 0, r1 * Math.cos(a), r1 * Math.sin(a), 0); st.push(0, 0.5, 1, 0.5);
       if (i < NS) { const q = i * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); }
     }
-    const rings = scene.primitives.add(new C.Primitive({ modelMatrix: M, asynchronous: false,
+    const rings = scene.primitives.add(new C.Primitive({ modelMatrix: M, asynchronous: false, cull: false,
       geometryInstances: new C.GeometryInstance({ geometry: new C.Geometry({ attributes: {
         position: new C.GeometryAttribute({ componentDatatype: C.ComponentDatatype.DOUBLE, componentsPerAttribute: 3, values: new Float64Array(pos) }),
         st: new C.GeometryAttribute({ componentDatatype: C.ComponentDatatype.FLOAT, componentsPerAttribute: 2, values: new Float32Array(st) }) },
@@ -105,6 +106,21 @@ function sky(on) {
     skyObjs = { planet, rings, plumes };
   }
   if (skyObjs) for (const o of Object.values(skyObjs)) o.show = on;
+  if (on) placeSky();
+}
+// Saturn at its true 238,000 km pushed the depth range out to ~380,000 km while the ground is 1.7 m away. Cesium
+// then splits the view into two depth slices, and the split comes and goes as the nearest terrain tile changes,
+// so Saturn blinked. Instead, each frame draw Saturn and its rings SKY_K times closer and SKY_K times smaller along
+// the same line of sight: identical on screen, still far beyond any part of the moon (~2,400 km vs. a 504 km moon),
+// and the whole scene fits in one depth slice.
+const SKY_K = 100, _skyAt = new C.Cartesian3(), _skyM = new C.Matrix4();
+function placeSky() {
+  if (!skyObjs || !skyObjs.planet.show) return;
+  const cam = camera.positionWC;
+  _skyAt.x = cam.x + (SATURN_D - cam.x) / SKY_K; _skyAt.y = cam.y * (1 - 1 / SKY_K); _skyAt.z = cam.z * (1 - 1 / SKY_K);
+  C.Matrix4.fromTranslation(_skyAt, _skyM); C.Matrix4.multiplyByUniformScale(_skyM, 1 / SKY_K, _skyM);
+  skyObjs.planet.modelMatrix = C.Matrix4.clone(_skyM, skyObjs.planet.modelMatrix);
+  skyObjs.rings.modelMatrix = C.Matrix4.clone(_skyM, skyObjs.rings.modelMatrix);
 }
 scene.preRender.addEventListener(() => { if (walk.on) walk.frame(performance.now()); });
 window.addEventListener('keydown', e => {
