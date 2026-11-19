@@ -495,6 +495,7 @@ const rover = (() => {
 
   // ---- open and close ----
   function begin() {
+    if (typeof life !== 'undefined' && life.on) life.close();
     if (walk.on) walk.exit(); if (inside.on) inside.close(); if (dive.picking) dive.cancel(); if (walk.picking) walk.cancel();
     if (section.picking || section.isOpen()) section.stop();
     picking = true; $('roverhint').classList.add('open'); $('chipRover').classList.add('on');

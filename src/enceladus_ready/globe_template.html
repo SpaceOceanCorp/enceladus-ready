@@ -161,6 +161,42 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #roverpanel details summary{cursor:pointer;color:var(--text);font-weight:500}
 #roverpanel details ul{padding-left:18px;margin:6px 0}
 #roverpanel a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}#roverpanel a:hover{color:#c6dafc}
+#lifehint{position:absolute;left:16px;right:16px;margin:0 auto;width:fit-content;top:70px;z-index:6;padding:8px 8px 8px 16px;font-size:14px;display:none;align-items:center;gap:10px;background:rgba(16,18,24,.96);color:#f2f5f9;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px)}
+#lifehint.open{display:flex}
+#lifehint button,#lifepanel .rv-row button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:16px;padding:6px 12px;font:500 13px Inter,sans-serif;cursor:pointer}
+#lifehint button:hover,#lifepanel .rv-row button:hover{background:#323947}
+#lifehint button.go,#lifepanel .rv-row button.go{background:#e9edf3;color:#0b1220;font-weight:600}
+#lifepanel .rv-row button:disabled,#lifeInst button:disabled{opacity:.4;cursor:default}
+#lifepanel{position:absolute;top:66px;right:16px;width:380px;max-width:calc(100vw - 32px);max-height:calc(100vh / var(--z) - 110px);overflow:auto;padding:14px 16px;z-index:4;font-size:13px}
+#lifepanel.hide{display:none}
+#lifepanel .top{display:flex;justify-content:space-between;align-items:center}
+#lifepanel h3{margin:0;font-size:15px;font-weight:600}
+#lifepanel h4{margin:12px 0 4px;font-size:13px;font-weight:600}
+#lifepanel .cite{font-size:11.5px;color:var(--muted)}
+#lifepanel .rv-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+#lifepanel select{background:#1f232b;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 6px;font:12.5px Inter,sans-serif}
+#lifepanel .bar{position:relative;height:10px;border-radius:5px;background:#262b35;overflow:hidden;margin:3px 0 2px}
+#lifepanel .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+#lifeTank{background:#7ee2ff}#lifeBel{background:linear-gradient(90deg,#57c785,#ffd36b)}
+#lifepanel .barrow{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:8px}
+#lifepanel .barrow b{color:var(--text)}
+#lifeInst{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
+#lifeInst button{text-align:left;padding:7px 9px;border-radius:9px;border:1px solid var(--line);background:#1d2129;color:var(--text);font:500 12.5px Inter,sans-serif;cursor:pointer;line-height:1.25}
+#lifeInst button:hover:not(:disabled){background:#2a2f3a}
+#lifeInst small{display:block;color:var(--muted);font-weight:400;font-size:11px;margin-top:2px}
+#lifeSuggest{color:#ffd36b;font-size:12.5px;margin:6px 0}
+#lifeLog{max-height:220px;overflow:auto;font-size:12px;color:#cfd6e0;padding-left:18px;margin:4px 0}
+#lifeLog li{margin:4px 0}
+#lifepanel b.up{color:#57c785}#lifepanel b.down{color:#ff9a3c}
+#lifeCmp table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0;font-variant-numeric:tabular-nums}
+#lifeCmp th,#lifeCmp td{padding:3px 4px;text-align:right;border-bottom:1px solid var(--line)}
+#lifeCmp th:first-child,#lifeCmp td:first-child{text-align:left}
+#lifepanel a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}#lifepanel a:hover{color:#c6dafc}
+#lifepanel code{font-size:11.5px;color:#e9edf3}
+#lifepanel details{margin-top:10px;font-size:12px;color:#cfd6e0}
+#lifepanel details summary{cursor:pointer;color:var(--text);font-weight:500}
+#lifepanel details ul{padding-left:18px;margin:6px 0}
+#lifepanel details li{margin:3px 0}
 #loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);z-index:10;pointer-events:none;transition:opacity .6s}
 /* ---------- every screen size ---------- */
 #optsBtn{display:none;background:var(--panel-solid);color:var(--text)}
@@ -181,8 +217,8 @@ body.walking #layers,body.walking #ctrls{display:none}
   .chip{flex:none}
   #info{top:124px;max-height:calc(100vh / var(--z) - 210px)}
   #icepanel,#insidepanel{top:124px;max-height:max(220px,calc(100vh / var(--z) - 420px))}
-  #roverpanel{top:124px;max-height:calc(100vh / var(--z) - 170px)}
-  #sechint,#divehint,#landhint,#roverhint{top:124px}
+  #roverpanel,#lifepanel{top:124px;max-height:calc(100vh / var(--z) - 170px)}
+  #sechint,#divehint,#landhint,#roverhint,#lifehint{top:124px}
   #brand{left:12px;bottom:6px;transform:none;opacity:.95;z-index:4}
   #brand img{height:15px;filter:none}
   #credit{padding-left:130px}
@@ -195,15 +231,15 @@ body.walking #layers,body.walking #ctrls{display:none}
   .chip{height:36px;padding:0 12px;font-size:13px}
   #credit{display:none}
   #status{gap:12px;padding:0 10px}
-  #info,#icepanel,#insidepanel,#section,#walkhud,#roverpanel{top:auto;left:8px;right:8px;bottom:34px;width:auto;max-width:none;max-height:min(55vh,calc(100vh - 170px));overflow:auto;z-index:7;border-radius:14px}
+  #info,#icepanel,#insidepanel,#section,#walkhud,#roverpanel,#lifepanel{top:auto;left:8px;right:8px;bottom:34px;width:auto;max-width:none;max-height:min(55vh,calc(100vh - 170px));overflow:auto;z-index:7;border-radius:14px}
   #info{padding:16px 14px}
   #info h2{font-size:19px;padding-right:30px}
   #section{padding:10px 12px}
   #section .head span{flex-basis:100%;order:5;font-size:12px}
   #section svg{height:150px}
   #section .keys{gap:8px 12px;font-size:11px}
-  #sechint,#divehint,#landhint,#roverhint{top:110px;left:12px;right:12px;margin:0 auto;transform:none;width:fit-content;max-width:none;white-space:normal;font-size:13px;padding:8px 10px;gap:8px}
-  #sechint span,#divehint #divehintText,#landhint>span,#roverhint>span{flex-basis:100%;text-align:center}
+  #sechint,#divehint,#landhint,#roverhint,#lifehint{top:110px;left:12px;right:12px;margin:0 auto;transform:none;width:fit-content;max-width:none;white-space:normal;font-size:13px;padding:8px 10px;gap:8px}
+  #sechint span,#divehint #divehintText,#landhint>span,#roverhint>span,#lifehint>span{flex-basis:100%;text-align:center}
   #layers{left:12px;bottom:36px;gap:6px}
   .layerbtn{width:52px;height:52px}
   .layerbtn span{font-size:10px}
@@ -225,8 +261,8 @@ body.walking #layers,body.walking #ctrls{display:none}
   #search .bar{height:40px}
   #results{max-height:calc(100vh - 70px)}
   #info{top:56px;max-height:calc(100vh - 100px)}
-  #icepanel,#insidepanel,#roverpanel{top:56px;right:64px;max-height:calc(100vh - 100px)}
-  #sechint,#divehint,#landhint,#roverhint{top:56px}
+  #icepanel,#insidepanel,#roverpanel,#lifepanel{top:56px;right:64px;max-height:calc(100vh - 100px)}
+  #sechint,#divehint,#landhint,#roverhint,#lifehint{top:56px}
   #section{bottom:32px;max-height:calc(100vh - 44px);overflow:auto}
   #section svg{height:110px}
   #layers{bottom:34px}
@@ -249,7 +285,7 @@ body.walking #layers,body.walking #ctrls{display:none}
 /* big monitors: scale the controls up so they stay comfortable to read */
 @media (min-width:1800px) and (min-height:1000px){
   :root{--z:1.15}
-  #search,#info,#chips,#layers,#ctrls,#icepanel,#insidepanel,#section,#sechint,#divehint,#landhint,#walkhud,#roverhint,#roverpanel,#status,#brand{zoom:var(--z)}
+  #search,#info,#chips,#layers,#ctrls,#icepanel,#insidepanel,#section,#sechint,#divehint,#landhint,#walkhud,#roverhint,#roverpanel,#lifehint,#lifepanel,#status,#brand{zoom:var(--z)}
 }
 @media (min-width:2500px) and (min-height:1350px){ :root{--z:1.4} }
 </style>
@@ -279,6 +315,7 @@ body.walking #layers,body.walking #ctrls{display:none}
   <button class="chip" id="chipDive" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 15c2 0 2-1.5 4-1.5S8 15 10 15s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M2 20c2 0 2-1.5 4-1.5S8 20 10 20s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><circle cx="12" cy="6" r="3"/></svg>Dive</button>
   <button class="chip" id="chipLand" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg>Land</button>
   <button class="chip" id="chipRover" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="7" rx="1.5"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M12 8V4h4"/></svg>Rover ops</button>
+  <button class="chip" id="chipLife" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6"/><path d="M10 3v6L5 19a1.5 1.5 0 0 0 1.3 2h11.4A1.5 1.5 0 0 0 19 19l-5-10V3"/><path d="M7.5 14h9"/></svg>Life detection</button>
 </div>
 <div class="card" id="divehint"><span id="divehintText">Click a spot on the moon to dive into the ocean below it</span><span class="modes"><button id="diveScuba" class="go">Scuba</button><button id="diveSub">Submarine</button></span><button class="go" id="diveStripes">Dive under the tiger stripes</button><button id="diveCancel">Cancel</button></div>
 <div class="card hide" id="insidepanel">
@@ -395,6 +432,39 @@ body.walking #layers,body.walking #ctrls{display:none}
       </ul>
     </details>
   </div>
+</div>
+<div class="card" id="lifehint"><span>Click a spot on the moon to land the Orbilander there</span><button class="go" id="lifeStripes">Land near the tiger stripes</button><button id="lifeCancel">Cancel</button></div>
+<div class="card hide" id="lifepanel">
+  <div class="top"><h3>Life detection</h3><button class="iconbtn" id="lifeClose" aria-label="Close">&#10005;</button></div>
+  <p class="cite">NASA's proposed Enceladus Orbilander would land and test plume fallout for signs of life. Here you run its proposed Life Detection Suite. The model and every number come from <a href="https://github.com/sisl/LifeDetection" target="_blank" rel="noopener">sisl/LifeDetection</a> (Stanford SISL with NASA Ames; <a href="https://arxiv.org/abs/2510.08812" target="_blank" rel="noopener">Kim et al. 2025</a>).</p>
+  <p class="cite" id="lifeSite"></p>
+  <div class="barrow"><span>Sample in the tank</span><b id="lifeTankV"></b></div>
+  <div class="bar"><i id="lifeTank"></i></div>
+  <div class="barrow"><span>Chance of life, given the readings so far</span><b id="lifeBelV"></b></div>
+  <div class="bar"><i id="lifeBel"></i></div>
+  <p class="cite" id="lifeStatus"></p>
+  <h4>Instruments</h4>
+  <div id="lifeInst"></div>
+  <div class="rv-row"><button id="lifeCollect">Collect fallout</button><button id="lifeYes">Declare: life</button><button id="lifeNo">Declare: no life</button></div>
+  <p id="lifeSuggest"></p>
+  <h4>Let it run</h4>
+  <div class="rv-row"><button id="lifeAutoC">Mission baseline (ConOps)</button><button id="lifeAutoL">One-step lookahead</button><button id="lifeAutoStop">Stop</button></div>
+  <div class="rv-row"><button id="lifeNew">New sample</button><label class="cite">Truth: <select id="lifeTruth"><option value="random">Random (10% life)</option><option value="life">Life present</option><option value="none">No life</option></select></label></div>
+  <h4>Readings</h4>
+  <ol id="lifeLog" reversed></ol>
+  <h4>Compare the strategies</h4>
+  <div class="rv-row"><button id="lifeCompare">Run 500 landings each</button></div>
+  <div id="lifeCmp"></div>
+  <div class="rv-row"><button class="lnk" id="lifeMove">Land somewhere else</button></div>
+  <details><summary>Where every number comes from</summary>
+    <ul>
+      <li><b>Chance of life before any reading (10%), and how likely each reading is with and without life:</b> <a href="https://github.com/sisl/LifeDetection/blob/main/src/bayes_net.jl" target="_blank" rel="noopener">src/bayes_net.jl</a>. Curves are cut into bins as in <a href="https://github.com/sisl/LifeDetection/blob/main/src/common/bayes_net_helpers.jl" target="_blank" rel="noopener">src/common/bayes_net_helpers.jl</a>.</li>
+      <li><b>The six instruments, what each measures, the sample each uses, the 500-unit tank and fallout of about 270 units per collection (±25%):</b> <a href="https://github.com/sisl/LifeDetection/blob/main/src/LifeDetectionPOMDP.jl" target="_blank" rel="noopener">src/LifeDetectionPOMDP.jl</a>. Units are the repo's scaled sample units.</li>
+      <li><b>The mission baseline (ConOps) and the 99.9% / 0.1% thresholds for declaring:</b> <code>conops_orbiter</code> and <code>simulate_policyVLD</code> in <a href="https://github.com/sisl/LifeDetection/blob/main/src/common/simulate.jl" target="_blank" rel="noopener">src/common/simulate.jl</a>.</li>
+      <li><b>Different from the repo:</b> whether life is present stays fixed for the whole landing (the repo redraws it with each new batch of fallout), and the one-step lookahead is ours. The paper's planner (SARSOP) is not run here.</li>
+      <li>The probabilities are the authors' modelling assumptions, not measurements. The repo has no licence, so its code is not copied; the model is rebuilt here from its published numbers.</li>
+    </ul>
+  </details>
 </div>
 <div id="status">
   <span id="credit">Imagery and topography: Cassini ISS, Schenk &amp; McKinnon (2024), LPI/USRA, via USGS · Names: IAU/USGS Gazetteer · Jets: Porco et al. (2014) · Saturn: Solar System Scope (CC BY 4.0) · <a href="https://github.com/SpaceOceanCorp/enceladus-ready" target="_blank" rel="noopener">enceladus-ready</a></span>
@@ -731,6 +801,7 @@ handler.setInputAction(e => {
   if (walk.on) return;
   if (rover.picking) { rover.pickArea(e.position); return; }
   if (rover.on) { rover.click(e.position); return; }
+  if (life.picking) { life.pickSite(e.position); return; }
   if (dive.picking) { dive.pick(e.position); return; }
   if (inside.picking) { inside.pick(e.position); return; }
   if (section.picking) { section.addPoint(e.position); return; }
@@ -1311,7 +1382,9 @@ if (INT) {
 
 /*__WALK__*/
 /*__ROVER__*/
+/*__LIFE__*/
 window.encRover = rover;
+window.encLife = life;
 window.encViewer = viewer;
 window.encWalk = walk;
 })();
