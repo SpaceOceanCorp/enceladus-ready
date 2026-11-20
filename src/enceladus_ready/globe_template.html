@@ -441,12 +441,25 @@ body.walking #layers,body.walking #ctrls{display:none}
 }
 /* ---- flying on a phone: only the readout and the controls; the ship panel and the map open from two small buttons ---- */
 #flybar,#flymsg{display:none}
+#flybar button{width:42px;height:42px;display:grid;place-items:center;padding:0;border-radius:12px;background:rgba(8,12,20,.62);border:1px solid rgba(255,255,255,.2);color:#eef3f9;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);-webkit-tap-highlight-color:transparent}
+#flybar button[aria-pressed=true]{background:rgba(90,170,255,.4);border-color:rgba(160,210,255,.9)}
+#flybar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* clean view on a big screen (Hide panels, or H): only the ship, the readout and the controls, like on a phone */
+@media (min-width:641px) and (min-height:521px){body.flying.clean:not(.flymenu) #flighthud,body.flying.clean:not(.flymenu) #flymsg{display:none!important}}
+body.flying.clean #search,body.flying.clean #chips,body.flying.clean #status,body.flying.clean #brand,
+body.flying.clean:not(.flymenu) #walkhud.ship,body.flying.clean:not(.flymap) #shipmap{display:none!important}
+body.flying.clean #flybar{display:flex;position:absolute;top:12px;right:12px;z-index:10;gap:6px}
+body.flying.clean.flymenu #walkhud.ship{top:66px!important;max-height:calc(100% - 80px)!important;overflow:auto;z-index:9}
+body.flying.clean.flymap #shipmap{top:66px;right:12px;z-index:9}
+body.flying.clean #appanel{top:66px}
+body.flying.clean #flymsg:not(:empty){display:block;position:absolute;top:14px;left:50%;transform:translateX(-50%);width:max-content;max-width:min(560px,calc(100% - 240px));z-index:7;padding:7px 12px;border-radius:10px;background:rgba(8,12,20,.6);color:#eef3f9;font:500 13px/1.35 Inter,sans-serif;text-align:center;pointer-events:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+body.flying.clean.flymenu #flymsg{display:none}
+body.flying.clean #shippad.deck,body.flying.clean #flighthud{bottom:14px}
+#flybar #flyFull{display:none}body.flying.clean #flybar #flyFull{display:grid}
 @media (max-width:640px),(max-height:520px){
   body.flying #search,body.flying #chips,body.flying #status,body.flying #brand{display:none!important}
   body.flying #flybar{display:flex;position:absolute;top:8px;right:8px;z-index:10;gap:6px}
-  #flybar button{width:42px;height:42px;display:grid;place-items:center;padding:0;border-radius:12px;background:rgba(8,12,20,.62);border:1px solid rgba(255,255,255,.2);color:#eef3f9;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);-webkit-tap-highlight-color:transparent}
-  #flybar button[aria-pressed=true]{background:rgba(90,170,255,.4);border-color:rgba(160,210,255,.9)}
-  #flybar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  body.flying.clean #flybar #flyFull,#shipClean{display:none!important}   /* phones are always in the clean layout */
   body.flying #walkhud.ship{display:none}
   body.flying.flymenu #walkhud.ship{display:block;top:58px!important;bottom:auto!important;left:8px!important;right:8px!important;width:auto!important;max-width:420px;max-height:calc(100% - 66px)!important;overflow:auto;z-index:9}
   body.flying #shipmap{display:none}
@@ -638,9 +651,9 @@ body.walking #layers,body.walking #ctrls{display:none}
 <div class="card hide" id="walkhud">
   <h3 id="walktitle">On the surface of Enceladus</h3>
   <dl class="shiponly"><dt>Height</dt><dd id="shipalt"></dd><dt>Speed</dt><dd id="shipspd"></dd><dt>Attitude</dt><dd id="shipatt"></dd><dt>Fuel</dt><dd id="shipfuel"></dd><dt>Status</dt><dd id="shipstat"></dd><dt class="mprow">Online</dt><dd class="mprow mpname" id="shipmp"></dd></dl>
-  <div class="row shiponly"><button id="shipView">View: Chase</button><button id="shipAuto">Autopilot</button><button id="shipOut">Get out</button><button id="shipRefuel">Refuel</button><button id="shipExit">Back to orbit</button></div>
+  <div class="row shiponly"><button id="shipView">View: Chase</button><button id="shipAuto">Autopilot</button><button id="shipOut">Get out</button><button id="shipRefuel">Refuel</button><button id="shipExit">Back to orbit</button><button id="shipClean" title="Only the ship and the controls (H)">Hide panels</button></div>
   <div class="fuels shiponly"><label><span>Main engines<i class="sw" id="fuelMainSw"></i></span><select id="fuelMain" aria-label="Main engine fuel"></select></label><label><span>Thrusters<i class="sw" id="fuelThrSw"></i></span><select id="fuelThr" aria-label="Thruster fuel"></select></label><button id="fuelInf" class="inf" aria-pressed="false">Unlimited fuel: off</button><button id="padInvert" class="inf" aria-pressed="false" hidden>Controller pitch: like a plane</button></div>
-  <p class="help keys shiponly">W go · S back · A/D or ←/→ turn · ↑/↓ nose up/down · Q/E roll (fly upside down) · Space up · C down · Shift turbo · F warp · J intrastellar · X brake · P autopilot · V view · drag to look · Esc exit · a game controller or flight stick works too</p>
+  <p class="help keys shiponly">W go · S back · A/D or ←/→ turn · ↑/↓ nose up/down · Q/E roll (fly upside down) · Space up · C down · Shift turbo · F warp · J intrastellar · X brake · P autopilot · V view · H hide panels · drag to look · Esc exit · a game controller or flight stick works too</p>
   <p class="help touch shiponly">The stick points the nose · ROLL spins you over · LIFT/DROP · GO, REV, BRAKE · tap TURBO, WARP or INTRASTELLAR to pick a gear for GO (tap again for cruise)</p>
   <dl class="walkonly"><dt>Position</dt><dd id="walkpos"></dd><dt>Ground</dt><dd id="walkelev"></dd><dt>You are</dt><dd id="walkhop"></dd><dt>Sky</dt><dd id="walksat"></dd><dt class="mprow">Online</dt><dd class="mprow mpname" id="walkmp"></dd></dl>
   <div class="body walkonly">
@@ -700,6 +713,7 @@ body.walking #layers,body.walking #ctrls{display:none}
 <div id="flybar">
   <button id="flyMapBtn" aria-pressed="false" aria-label="Map"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></button>
   <button id="flyMenuBtn" aria-pressed="false" aria-label="Ship panel"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <button id="flyFull" aria-label="Show all panels (H)" title="Show all panels (H)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg></button>
 </div>
 <div id="flymsg" aria-live="polite"></div>
 <div class="card" id="callcard" role="dialog" aria-label="Call sign">

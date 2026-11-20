@@ -216,6 +216,7 @@ window.addEventListener('keydown', e => {
   if (walk.mode === 'ship') {
     if (k === 'v' && !e.repeat) { $('shipView').click(); return; }
     if (k === 'p' && !e.repeat) { $('shipAuto').click(); return; }
+    if (k === 'h' && !e.repeat) { ship.toggleClean(); return; }
     if (['r', 'f', 'j', 'c', 'x', ' '].includes(k)) { e.preventDefault(); walk.keys.add(k); return; }
   }
   if (k === ' ') { e.preventDefault(); walk.jump(); return; }

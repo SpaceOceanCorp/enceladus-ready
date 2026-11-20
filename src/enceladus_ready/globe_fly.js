@@ -938,6 +938,15 @@ const flyPanel = (cls, btn, on) => { document.body.classList.toggle(cls, on); $(
 $('flyMenuBtn').onclick = () => { const on = !document.body.classList.contains('flymenu'); flyPanel('flymenu', 'flyMenuBtn', on); if (on) flyPanel('flymap', 'flyMapBtn', false); };
 $('flyMapBtn').onclick = () => { const on = !document.body.classList.contains('flymap'); flyPanel('flymap', 'flyMapBtn', on); if (on) flyPanel('flymenu', 'flyMenuBtn', false); };
 for (const id of ['shipAuto', 'shipOut', 'shipExit']) $(id).addEventListener('click', () => flyPanel('flymenu', 'flyMenuBtn', false));
+// clean view on any screen: only the ship, the readout and the controls (remembered on this device)
+const setClean = on => {
+  document.body.classList.toggle('clean', on); flyPanel('flymenu', 'flyMenuBtn', false); flyPanel('flymap', 'flyMapBtn', false);
+  try { localStorage.setItem('encClean', on ? '1' : '0'); } catch (_) {}
+};
+$('shipClean').onclick = () => setClean(true);
+$('flyFull').onclick = () => setClean(false);
+ship.toggleClean = () => setClean(!document.body.classList.contains('clean'));
+try { if (localStorage.getItem('encClean') === '1') document.body.classList.add('clean'); } catch (_) {}
 for (const [id, kind] of [['fuelMain', 'main'], ['fuelThr', 'thr']]) {
   const sel = $(id), cur = kind === 'main' ? ship.mainFuel : ship.thrFuel;
   sel.innerHTML = Object.entries(FUELS).map(([k, F]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${F.name}${kind === 'main' ? ` · Isp ${F.isp.toLocaleString('en-US')} s` : ''}</option>`).join('');
