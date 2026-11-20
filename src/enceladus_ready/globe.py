@@ -212,6 +212,10 @@ def build_page(mosaic_max=5, relief_max=5):
     html = html.replace("__BUILD__", str(int(time.time())))  # cache-busts dive.js
     # surface mode (land, walk, rover, skim) lives in its own file and is inlined into the page script
     html = html.replace("/*__WALK__*/", Path(__file__).with_name("globe_walk.js").read_text(encoding="utf8"))
+    # fly: a thruster-driven ship, picked like Land and run from the same surface loop
+    html = html.replace("/*__FLY__*/", Path(__file__).with_name("globe_fly.js").read_text(encoding="utf8"))
+    # shared world: other players (web and the Unreal game) through the relay in multiplayer/
+    html = html.replace("/*__MP__*/", Path(__file__).with_name("globe_mp.js").read_text(encoding="utf8"))
     # rover ops (plan and run a traverse with Earth contact windows) is inlined the same way
     html = html.replace("/*__ROVER__*/", Path(__file__).with_name("globe_rover.js").read_text(encoding="utf8"))
     # life detection (the Orbilander's proposed Life Detection Suite, model from sisl/LifeDetection)

@@ -1,0 +1,8 @@
+{
+  "name": "enceladus-relay-cloudflare",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Enceladus shared-world relay as a Cloudflare Worker + Durable Object (same protocol as ../server.mjs).",
+  "scripts": { "dev": "wrangler dev --port 8791", "deploy": "wrangler deploy" },
+  "devDependencies": { "wrangler": "4.156.0" }
+}

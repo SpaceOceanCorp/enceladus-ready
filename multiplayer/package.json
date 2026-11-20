@@ -1,0 +1,11 @@
+{
+  "name": "enceladus-relay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared-world relay for the Enceladus globe and the Mission to Enceladus game (M2EBridge).",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": { "start": "node server.mjs" },
+  "engines": { "node": ">=20" },
+  "dependencies": { "ws": "8.18.0" }
+}

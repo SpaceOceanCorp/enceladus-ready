@@ -124,6 +124,62 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/
 #walkhud .pad{display:grid;grid-template-columns:repeat(3,44px);gap:4px;margin:6px 0}
 #walkhud .pad button{padding:8px 0;border-radius:10px;touch-action:none}
 #walkhud .help{color:#9aa4b2;font-size:12px;margin:6px 0 0}
+#walkhud.ship .walkonly,#walkhud:not(.ship) .shiponly{display:none!important}
+#walkhud.ship{top:164px!important;bottom:auto!important;left:16px!important;right:auto!important;width:min(330px,calc(100vw - 32px))!important;max-height:none!important}
+#walkhud.ship dl{margin-bottom:6px}
+#shippad{position:absolute;left:0;right:0;bottom:46px;z-index:6;display:flex;justify-content:space-between;align-items:flex-end;padding:0 max(28px,6vw);pointer-events:none}
+#shippad.hide{display:none}
+#shippad button{pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;background:rgba(14,17,24,.55);border:2px solid rgba(255,255,255,.38);color:#fff;font:700 22px Inter,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;padding:0;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+#shippad button small{font:600 9.5px Inter,sans-serif;letter-spacing:.05em;opacity:.8}
+#shippad .dpad{display:grid;grid-template-columns:repeat(3,66px);grid-template-rows:repeat(3,66px);gap:4px}
+#shippad .dpad button{border-radius:14px}
+#shippad .dpad .u{grid-area:1/2}#shippad .dpad .l{grid-area:2/1}#shippad .dpad .r{grid-area:2/3}#shippad .dpad .d{grid-area:3/2}
+#shippad .abpad{display:grid;grid-template-columns:86px 86px;gap:12px 18px;align-items:end;justify-items:center}
+#shippad .abpad .a,#shippad .abpad .b{width:86px;height:86px;border-radius:50%;font-size:28px;background:rgba(170,30,70,.62)}
+#shippad .abpad .a{transform:translateY(-34px)}
+#shippad .abpad .wp,#shippad .abpad .t,#shippad .pills button{width:100%;height:40px;border-radius:20px;font-size:13px;letter-spacing:.07em}
+#shippad .abpad .wp{background:rgba(140,70,220,.62)}
+#shippad .lpad{display:flex;flex-direction:column;gap:10px;align-items:center}
+#shippad .pills{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+#shippad .pills button{background:rgba(40,110,170,.6)}
+#shipmap{position:absolute;right:16px;top:164px;z-index:6;padding:10px 12px 8px;background:rgba(16,18,24,.92);color:#f2f5f9;font:12px Inter,sans-serif;user-select:none;-webkit-user-select:none}
+#shipmap.hide{display:none}
+#shipmap .head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+#shipmap .head b{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#cfe3f5}
+#shipmap .head button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:12px;padding:3px 9px;font:500 11.5px Inter,sans-serif;cursor:pointer}
+#shipmap .body{display:flex;gap:8px}
+#shipmap #shipmapc{width:180px;height:180px;border-radius:50%;cursor:crosshair}
+#shipmap #shipgauge{width:62px;height:180px}
+#shipmap .cap{font-size:10.5px;color:#9aa4b2;margin-top:5px;max-width:250px}
+#shippad .abpad .t{background:rgba(230,110,20,.62)}
+#shippad button.on{background:rgba(110,185,255,.7)!important;border-color:#d6ecff}
+#shippad .abpad .in{grid-column:1/3;width:100%;height:40px;border-radius:20px;font-size:13px;letter-spacing:.07em;background:linear-gradient(90deg,rgba(30,130,200,.68),rgba(160,60,230,.68))}
+@media (max-width:640px){#shippad .abpad .in{height:34px;font-size:12px}}
+@media (hover:none),(pointer:coarse){#shippad .kb{display:none}}
+@media (max-width:640px){
+  #walkhud.ship{top:206px!important;left:8px!important;width:calc(100vw - 16px)!important}
+  #walkhud.ship{padding:8px 12px!important}#walkhud.ship h3,#walkhud.ship .help{display:none!important}
+  #walkhud.ship dl{font-size:12px;margin-bottom:4px}#walkhud.ship .row{margin:4px 0 0}#walkhud.ship .row button{padding:5px 10px;font-size:12px}
+  #shippad{bottom:38px;padding:0 10px}
+  #shippad .dpad{grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,56px)}
+  #shippad .abpad{grid-template-columns:72px 72px;gap:10px 12px}
+  #shippad .abpad .a,#shippad .abpad .b{width:72px;height:72px;font-size:24px}
+  #shippad .abpad .a{transform:translateY(-28px)}
+  #shipmap{top:auto;bottom:300px;right:8px;padding:6px}#shipmap .head,#shipmap .cap{display:none}#shipmap #shipmapc{width:96px;height:96px}#shipmap #shipgauge{width:44px;height:96px}
+  #shippad .pills button,#shippad .abpad .wp,#shippad .abpad .t{height:34px;font-size:12px}
+}
+@media (max-height:520px){
+  #walkhud.ship{top:58px!important}
+  #shippad{bottom:34px}
+  #shippad .dpad{grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px)}
+  #shippad .abpad .a,#shippad .abpad .b{width:66px;height:66px}
+  #shippad .abpad{grid-template-columns:66px 66px}
+  #shipmap{top:58px;bottom:auto;right:8px;padding:6px}#shipmap .head,#shipmap .cap{display:none}#shipmap #shipmapc{width:92px;height:92px}#shipmap #shipgauge{width:44px;height:92px}
+  #shippad .dpad{grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px)}#shippad .lpad{gap:6px}#shippad .pills button,#shippad .abpad .wp,#shippad .abpad .t{height:30px;font-size:11px}
+}
+#walkhud button:disabled{opacity:.45;cursor:default}
+#walkhud.nomp .mprow{display:none}#walkhud .mpname{cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.35)}
+#walkhud .howto{color:#cfd6e0}#walkhud .howto b{color:#fff}#walkhud .howto ul{margin:3px 0 0;padding-left:16px}#walkhud .howto li{margin:1px 0}#walkhud .howto summary{color:#fff;font-weight:600;cursor:pointer;padding:4px 0}
 #diveStripes{background:var(--accent)!important;color:#0b1220!important;border-color:var(--accent)!important;font-weight:600!important}
 #insideTemp{font-size:12.5px;color:#cfd6e0;margin:6px 0}
 #insideTemp .tp{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:4px;font-variant-numeric:tabular-nums}
@@ -329,6 +385,159 @@ body.walking #layers,body.walking #ctrls{display:none}
   #search,#info,#chips,#layers,#ctrls,#icepanel,#insidepanel,#section,#sechint,#divehint,#landhint,#walkhud,#roverhint,#roverpanel,#lifehint,#lifepanel,#tourpanel,#status,#brand{zoom:var(--z)}
 }
 @media (min-width:2500px) and (min-height:1350px){ :root{--z:1.4} }
+/* ---- flight deck: stick and roll on the left, drives and throttle on the right ---- */
+#shippad.deck{position:absolute;left:0;right:0;bottom:46px;z-index:6;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:0 max(20px,3vw);pointer-events:none}
+#shippad.deck.hide{display:none}
+#shippad.deck .cl{background:rgba(8,12,20,.42);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:10px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#shippad.deck button{pointer-events:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:auto;height:auto;margin:0;padding:0;transform:none;background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.17);border-radius:14px;color:#e9f0f8;font:700 12px Inter,sans-serif;letter-spacing:.08em;transition:background .12s,border-color .12s,box-shadow .12s,transform .08s}
+#shippad.deck button small{font:600 9px Inter,sans-serif;letter-spacing:.1em;opacity:.7}
+#shippad.deck svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+#shippad.deck button.on{transform:scale(.95);border-color:rgba(160,210,255,.95);background:rgba(90,170,255,.38)!important;box-shadow:0 0 18px rgba(90,170,255,.55)}
+#shippad.deck .stickc{display:flex;flex-direction:column;align-items:center;gap:8px}
+#shippad.deck .rollrow{display:flex;gap:8px;width:100%}
+#shippad.deck .roll{flex:1;height:42px;flex-direction:row;gap:6px}
+#shippad.deck .roll svg{width:20px;height:20px}
+#shippad.deck .stick{position:relative;width:176px;height:176px;border-radius:50%;background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.09),rgba(255,255,255,.02) 62%,rgba(0,0,0,.28));border:1px solid rgba(255,255,255,.14)}
+#shippad.deck .stick .ring{position:absolute;inset:31%;border-radius:50%;border:1px dashed rgba(255,255,255,.16);pointer-events:none}
+#shippad.deck .stick .knob{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#b9c8d8,#3b4656 70%);box-shadow:0 3px 10px rgba(0,0,0,.55);pointer-events:none}
+#shippad.deck .stick button{position:absolute;width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.06)}
+#shippad.deck .stick .su{left:60px;top:4px}#shippad.deck .stick .sd{left:60px;bottom:4px}#shippad.deck .stick .sl{left:4px;top:60px}#shippad.deck .stick .sr{right:4px;top:60px}
+#shippad.deck .thr{display:flex;flex-direction:column;gap:8px;width:240px}
+#shippad.deck .drives{display:grid;grid-template-columns:1fr 1fr 1.45fr;gap:6px}
+#shippad.deck .drives button{height:40px;border-radius:12px;font-size:11px;border-bottom:3px solid}
+#shippad.deck .drives .in{font-size:10px;letter-spacing:.02em;background:linear-gradient(90deg,rgba(60,140,230,.22),rgba(170,90,240,.22))}
+#shippad.deck .drives .t{border-bottom-color:#ff9a3c}#shippad.deck .drives .wp{border-bottom-color:#b07bff}#shippad.deck .drives .in{border-bottom-color:#58b7ff}
+#shippad.deck .drives .t.on,#shippad.deck .drives .t.sel{background:rgba(255,150,60,.42)!important;border-color:#ffb36b;box-shadow:0 0 18px rgba(255,150,60,.6)}
+#shippad.deck .drives .wp.on,#shippad.deck .drives .wp.sel{background:rgba(170,110,255,.42)!important;border-color:#c9a4ff;box-shadow:0 0 18px rgba(170,110,255,.6)}
+#shippad.deck .drives .in.on,#shippad.deck .drives .in.sel{background:linear-gradient(90deg,rgba(60,160,255,.55),rgba(180,90,255,.55))!important;border-color:#bfe0ff;box-shadow:0 0 22px rgba(120,140,255,.7)}
+#shippad.deck .main{display:grid;grid-template-columns:54px 64px 1fr;gap:8px}
+#shippad.deck .lift,#shippad.deck .rb{display:flex;flex-direction:column;gap:8px}
+#shippad.deck .lift button,#shippad.deck .rb button{height:52px;font-size:11px}
+#shippad.deck .lift svg{width:20px;height:20px}
+#shippad.deck .brk{color:#ffc2c2;border-color:rgba(255,120,120,.38)}
+#shippad.deck .brk.on{background:rgba(255,80,80,.38)!important;border-color:#ff9a9a;box-shadow:0 0 18px rgba(255,80,80,.55)}
+#shippad.deck .go{height:112px;border-radius:20px;font-size:21px;letter-spacing:.16em;background:linear-gradient(180deg,rgba(60,205,150,.5),rgba(20,120,90,.38));border-color:rgba(120,240,190,.5)}
+#shippad.deck .go.on{background:rgba(60,225,160,.62)!important;border-color:#a8f5d6;box-shadow:0 0 26px rgba(60,225,160,.6)}
+@media (max-width:640px){
+  #shippad.deck{bottom:36px;padding:0 8px;gap:6px}
+  #shippad.deck .cl{padding:7px;border-radius:18px}
+  #shippad.deck .roll{height:36px}
+  #shippad.deck .stick{width:140px;height:140px}
+  #shippad.deck .stick button{width:46px;height:46px}
+  #shippad.deck .stick .su{left:47px;top:3px}#shippad.deck .stick .sd{left:47px;bottom:3px}#shippad.deck .stick .sl{left:3px;top:47px}#shippad.deck .stick .sr{right:3px;top:47px}
+  #shippad.deck .thr{width:180px;gap:6px}
+  #shippad.deck .drives button{height:34px;font-size:9.5px}#shippad.deck .drives .in{font-size:8.5px}
+  #shippad.deck .main{grid-template-columns:42px 50px 1fr;gap:6px}
+  #shippad.deck .lift,#shippad.deck .rb{gap:6px}
+  #shippad.deck .lift button,#shippad.deck .rb button{height:44px;font-size:9.5px}
+  #shippad.deck .go{height:94px;font-size:16px}
+}
+@media (max-height:520px){
+  #shippad.deck{bottom:30px}
+  #shippad.deck .stick{width:120px;height:120px}
+  #shippad.deck .stick button{width:40px;height:40px}
+  #shippad.deck .stick .su{left:40px;top:2px}#shippad.deck .stick .sd{left:40px;bottom:2px}#shippad.deck .stick .sl{left:2px;top:40px}#shippad.deck .stick .sr{right:2px;top:40px}
+  #shippad.deck .roll{height:32px}#shippad.deck .go{height:80px}#shippad.deck .lift button,#shippad.deck .rb button{height:37px}
+}
+/* ---- flying on a phone: only the readout and the controls; the ship panel and the map open from two small buttons ---- */
+#flybar,#flymsg{display:none}
+@media (max-width:640px),(max-height:520px){
+  body.flying #search,body.flying #chips,body.flying #status,body.flying #brand{display:none!important}
+  body.flying #flybar{display:flex;position:absolute;top:8px;right:8px;z-index:10;gap:6px}
+  #flybar button{width:42px;height:42px;display:grid;place-items:center;padding:0;border-radius:12px;background:rgba(8,12,20,.62);border:1px solid rgba(255,255,255,.2);color:#eef3f9;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);-webkit-tap-highlight-color:transparent}
+  #flybar button[aria-pressed=true]{background:rgba(90,170,255,.4);border-color:rgba(160,210,255,.9)}
+  #flybar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  body.flying #walkhud.ship{display:none}
+  body.flying.flymenu #walkhud.ship{display:block;top:58px!important;bottom:auto!important;left:8px!important;right:8px!important;width:auto!important;max-width:420px;max-height:calc(100% - 66px)!important;overflow:auto;z-index:9}
+  body.flying #shipmap{display:none}
+  body.flying.flymap #shipmap:not(.hide){display:block;top:58px;bottom:auto;right:8px;z-index:9}
+  body.flying.flymenu #shipmap{display:none}
+  body.flying #appanel{top:58px;max-height:calc(100% - 66px);overflow:auto}
+  body.flying #flighthud{top:8px;bottom:auto;left:8px;transform:none}
+  body.flying #flymsg:not(:empty){display:block;position:absolute;top:66px;left:8px;max-width:min(460px,calc(100% - 16px));z-index:7;padding:6px 10px;border-radius:10px;background:rgba(8,12,20,.6);color:#eef3f9;font:500 12px/1.35 Inter,sans-serif;pointer-events:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  body.flying.flymenu #flymsg{display:none}
+  body.flying #shippad.deck{bottom:8px}
+}
+@media (max-width:640px){
+  body.flying #flighthud>div{padding:5px 8px;min-width:0}body.flying #flighthud .fh-alt{min-width:0}
+  body.flying #flighthud .fh-alt b{font-size:19px}body.flying #flighthud b{font-size:14px}body.flying #flighthud i{font-size:10.5px}
+}
+@media (max-height:520px) and (min-width:641px){   /* phone on its side: the message sits between the two control clusters */
+  body.flying #flymsg:not(:empty){top:72px;left:50%;transform:translateX(-50%);width:max-content;max-width:min(420px,calc(100% - 440px));text-align:center}
+}
+@media (max-height:360px){
+  body.flying #flighthud>div{padding:4px 10px}body.flying #flighthud .fh-alt b{font-size:18px}body.flying #flighthud b{font-size:14px}
+  #shippad.deck .cl{padding:6px;border-radius:16px}#shippad.deck .stickc,#shippad.deck .thr{gap:5px}
+  #shippad.deck .stick{width:104px;height:104px}
+  #shippad.deck .stick button{width:36px;height:36px}
+  #shippad.deck .stick .su{left:34px;top:1px}#shippad.deck .stick .sd{left:34px;bottom:1px}#shippad.deck .stick .sl{left:1px;top:34px}#shippad.deck .stick .sr{right:1px;top:34px}
+  #shippad.deck .roll{height:28px}#shippad.deck .drives button{height:30px}#shippad.deck .main,#shippad.deck .lift,#shippad.deck .rb{gap:5px}
+  #shippad.deck .go{height:66px}#shippad.deck .lift button,#shippad.deck .rb button{height:30px}#shippad.deck .lift svg{width:16px;height:16px}
+}
+/* ---- call sign card ---- */
+#callcard{position:absolute;left:50%;top:84px;transform:translateX(-50%);z-index:12;width:min(400px,calc(100vw - 24px));padding:12px 14px;background:rgba(14,18,26,.95);color:#eef3f9;font:13px/1.4 Inter,sans-serif;display:none;box-sizing:border-box}
+#callcard.open{display:block}
+#callcard label{display:block;font-weight:600;margin-bottom:8px}#callcard label span{font-weight:400;color:#9aa4b2}
+#callcard .row{display:flex;gap:6px}
+#callcard input{flex:1;min-width:0;background:#1c212b;border:1px solid rgba(255,255,255,.22);border-radius:10px;color:#f2f5f9;font:500 16px Inter,sans-serif;padding:7px 10px;outline:none}
+#callcard input:focus{border-color:#8ab4f8}
+#callcard button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:16px;padding:6px 14px;font:500 13px Inter,sans-serif;cursor:pointer}
+#callcard button.go{background:#e9edf3;color:#0b1220;font-weight:600}
+@media (max-width:640px),(max-height:520px){body.flying #callcard{top:58px}}
+/* ---- altimeter strip ---- */
+#flighthud{position:absolute;left:50%;bottom:46px;transform:translateX(-50%);z-index:6;display:flex;background:rgba(8,12,20,.58);border:1px solid rgba(255,255,255,.16);border-radius:16px;color:#eef3f9;font:500 12px Inter,sans-serif;pointer-events:none;overflow:hidden;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 8px 30px rgba(0,0,0,.35)}
+#flighthud.hide{display:none}
+#flighthud>div{display:flex;flex-direction:column;justify-content:center;padding:8px 16px;min-width:92px}
+#flighthud>div+div{border-left:1px solid rgba(255,255,255,.1)}
+#flighthud span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#93a3b8;white-space:nowrap}
+#flighthud b{font:700 20px/1.15 Inter,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+#flighthud .fh-alt{min-width:156px}#flighthud .fh-alt b{font-size:30px}
+#flighthud i{font-style:normal;font-size:12px;color:#b9c6d6;font-variant-numeric:tabular-nums;white-space:nowrap}
+#flighthud.warn{border-color:#ff5a5a;animation:fhwarn .5s infinite alternate}
+#flighthud.warn .fh-alt span,#flighthud.warn .fh-alt b{color:#ff8a8a}
+@keyframes fhwarn{to{background:rgba(110,12,12,.7);box-shadow:0 0 0 3px rgba(255,90,90,.45)}}
+#flighthud.crash .fh-alt b{color:#ffb15a}
+#flighthud.space .fh-alt b{color:#cfe1ff}
+#fhMode[data-m=turbo]{color:#ffb15a}#fhMode[data-m=warp]{color:#c79bff}#fhMode[data-m=intra]{color:#9fc8ff}
+@media (max-width:980px){#flighthud{top:112px;bottom:auto}}
+@media (max-width:640px){#flighthud>div{padding:6px 10px;min-width:68px}#flighthud .fh-alt{min-width:112px}#flighthud .fh-alt b{font-size:22px}#flighthud b{font-size:15px}#flighthud span{font-size:9px}}
+@media (max-height:520px){#flighthud{top:8px;bottom:auto}}
+/* ---- fuel pickers ---- */
+#walkhud .fuels{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 2px}
+#walkhud .fuels label{display:flex;flex-direction:column;gap:4px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#9aa4b2}
+#walkhud .fuels .sw{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:6px;vertical-align:0;box-shadow:0 0 8px currentColor}
+#walkhud .fuels .inf{grid-column:1/3;justify-self:start}
+#walkhud .fuels select{color-scheme:dark;background:#1c212b;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:#f2f5f9;font:500 12.5px Inter,sans-serif;padding:6px 8px;text-transform:none;letter-spacing:0;width:100%;cursor:pointer}
+@media (max-width:640px){#walkhud .fuels{margin:4px 0 0}#walkhud .fuels select{font-size:12px;padding:4px 6px}}
+/* ---- autopilot panel ---- */
+#appanel{position:absolute;left:50%;top:164px;transform:translateX(-50%);z-index:8;width:min(380px,calc(100vw - 24px));padding:12px 14px;background:rgba(14,18,26,.95);color:#eef3f9;font:13px/1.4 Inter,sans-serif;box-sizing:border-box}
+#appanel.hide{display:none}
+#appanel .aphead{display:flex;align-items:center;gap:10px;margin-bottom:4px}#appanel .aphead b{font:600 15px Inter,sans-serif;flex:1}
+#apState{font:600 10.5px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#93a3b8;padding:3px 8px;border-radius:10px;background:rgba(255,255,255,.07)}
+#apState.on{color:#05140f;background:#7ee2b8}
+#appanel button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:14px;padding:6px 12px;font:500 13px Inter,sans-serif;cursor:pointer}
+#appanel #apClose{padding:3px 9px}
+#appanel button.go{width:100%;margin-top:8px;padding:9px;background:linear-gradient(180deg,#46d6a6,#1f9c78);color:#05140f;font-weight:700;border:0}
+#appanel button.go.stop{background:linear-gradient(180deg,#ff917f,#d9533f);color:#1a0603}
+#appanel .apf{display:flex;flex-direction:column;gap:4px;margin:9px 0;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#9aa4b2}
+#appanel .apf.two{display:grid;grid-template-columns:1.3fr 1fr;gap:10px}#appanel .apf.two label{display:flex;flex-direction:column;gap:4px}
+#appanel select,#appanel input{color-scheme:dark;background:#1c212b;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:#f2f5f9;font:500 13px Inter,sans-serif;padding:6px 8px;text-transform:none;letter-spacing:0;width:100%;box-sizing:border-box}
+#appanel .altin{display:flex;gap:6px}#appanel .altin input{flex:1;min-width:0}#appanel .altin select{width:62px;flex:none}
+#appanel .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}#appanel .seg button{padding:7px 4px;font-size:12.5px;text-transform:none;letter-spacing:0}
+#appanel .seg button.on{background:#e9edf3;color:#0b1220;font-weight:600}#appanel .seg button:disabled{opacity:.38;cursor:default}
+#appanel .apnote{margin:6px 0 0;color:#aab6c6;font-size:12px}
+#fhMode[data-m=auto]{color:#7ee2b8}
+#appanel .apmini{display:none}
+#appanel.mini{left:auto;right:16px;top:430px;transform:none;width:300px;padding:10px 12px}
+#appanel.mini .apf,#appanel.mini .apnote,#appanel.mini #apGo,#appanel.mini #apClose{display:none}
+#appanel.mini .apmini{display:flex;flex-direction:column;gap:8px}
+#appanel .apmini #apStatus{color:#cfe8dc;font-size:12.5px;line-height:1.35}
+#appanel .apmini .apbtns{display:flex;gap:6px}#appanel .apmini .apbtns button{flex:1;padding:6px 8px;font-size:12.5px}
+#appanel .apmini .stop{background:rgba(217,83,63,.25);border-color:rgba(255,140,120,.5);color:#ffd0c6}
+@media (max-width:640px){#appanel.mini{left:8px;right:8px;width:auto;top:auto;bottom:250px}}
+@media (max-height:520px){#appanel.mini{top:8px;bottom:auto;left:auto;right:8px;width:260px}}
+@media (max-width:640px){#appanel{top:auto;bottom:250px}}
+@media (max-height:520px){#appanel{top:8px;bottom:auto;max-height:calc(100vh - 16px);overflow:auto}}
 </style>
 </head>
 <body>
@@ -356,6 +565,7 @@ body.walking #layers,body.walking #ctrls{display:none}
   <button class="chip" id="chipInside" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>Look inside</button>
   <button class="chip" id="chipDive" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 15c2 0 2-1.5 4-1.5S8 15 10 15s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M2 20c2 0 2-1.5 4-1.5S8 20 10 20s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><circle cx="12" cy="6" r="3"/></svg>Dive</button>
   <button class="chip" id="chipLand" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg>Land</button>
+  <button class="chip" id="chipFly" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c3 2.5 4 6 4 10v4H8v-4c0-4 1-7.5 4-10z"/><path d="M8 13l-3 3v3h3"/><path d="M16 13l3 3v3h-3"/><path d="M10 19.5c.5 1.5 1.2 2.5 2 2.5s1.5-1 2-2.5"/></svg>Fly</button>
   <button class="chip" id="chipRover" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="7" rx="1.5"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M12 8V4h4"/></svg>Rover ops</button>
   <button class="chip" id="chipLife" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6"/><path d="M10 3v6L5 19a1.5 1.5 0 0 0 1.3 2h11.4A1.5 1.5 0 0 0 19 19l-5-10V3"/><path d="M7.5 14h9"/></svg>Life detection</button>
 </div>
@@ -424,16 +634,77 @@ body.walking #layers,body.walking #ctrls{display:none}
 </div>
 
 <a id="brand" href="https://spaceoceancorp.com" target="_blank" rel="noopener" aria-label="Space Ocean Corp"><img src="spaceocean-wordmark-white.png" alt="Space Ocean Corp"></a>
-<div class="card" id="landhint"><span>Click a spot on the moon to land there</span><button class="go" id="landStripes">Land at the tiger stripes</button><button id="landSaturn">Land under Saturn</button><button id="landCancel">Cancel</button></div>
+<div class="card" id="landhint"><span id="landhinttext">Click anywhere on the moon to land there, or</span><button class="go" id="landStripes">Land at the tiger stripes</button><button id="landSaturn">Land on Enceladus</button><button id="startSpace" style="display:none">Start in orbit</button><button id="landCancel">Cancel</button></div>
 <div class="card hide" id="walkhud">
-  <h3>On the surface of Enceladus</h3>
-  <dl><dt>Position</dt><dd id="walkpos"></dd><dt>Ground</dt><dd id="walkelev"></dd><dt>You are</dt><dd id="walkhop"></dd><dt>Sky</dt><dd id="walksat"></dd></dl>
-  <div class="body">
-    <div class="row"><button data-mode="walk" class="go">Walk</button><button data-mode="rover">Rover</button><button data-mode="skim">Skim</button><button id="walkFast" aria-pressed="false">Fast</button><button id="walkJump">Jump</button><button id="walkSat">Look at Saturn</button><button id="walkExit">Back to orbit</button></div>
+  <h3 id="walktitle">On the surface of Enceladus</h3>
+  <dl class="shiponly"><dt>Height</dt><dd id="shipalt"></dd><dt>Speed</dt><dd id="shipspd"></dd><dt>Attitude</dt><dd id="shipatt"></dd><dt>Fuel</dt><dd id="shipfuel"></dd><dt>Status</dt><dd id="shipstat"></dd><dt class="mprow">Online</dt><dd class="mprow mpname" id="shipmp"></dd></dl>
+  <div class="row shiponly"><button id="shipView">View: Chase</button><button id="shipAuto">Autopilot</button><button id="shipOut">Get out</button><button id="shipRefuel">Refuel</button><button id="shipExit">Back to orbit</button></div>
+  <div class="fuels shiponly"><label><span>Main engines<i class="sw" id="fuelMainSw"></i></span><select id="fuelMain" aria-label="Main engine fuel"></select></label><label><span>Thrusters<i class="sw" id="fuelThrSw"></i></span><select id="fuelThr" aria-label="Thruster fuel"></select></label><button id="fuelInf" class="inf" aria-pressed="false">Unlimited fuel: off</button><button id="padInvert" class="inf" aria-pressed="false" hidden>Controller pitch: like a plane</button></div>
+  <p class="help keys shiponly">W go · S back · A/D or ←/→ turn · ↑/↓ nose up/down · Q/E roll (fly upside down) · Space up · C down · Shift turbo · F warp · J intrastellar · X brake · P autopilot · V view · drag to look · Esc exit · a game controller or flight stick works too</p>
+  <p class="help touch shiponly">The stick points the nose · ROLL spins you over · LIFT/DROP · GO, REV, BRAKE · tap TURBO, WARP or INTRASTELLAR to pick a gear for GO (tap again for cruise)</p>
+  <dl class="walkonly"><dt>Position</dt><dd id="walkpos"></dd><dt>Ground</dt><dd id="walkelev"></dd><dt>You are</dt><dd id="walkhop"></dd><dt>Sky</dt><dd id="walksat"></dd><dt class="mprow">Online</dt><dd class="mprow mpname" id="walkmp"></dd></dl>
+  <div class="body walkonly">
+    <div class="row"><button data-mode="walk" class="go">Walk</button><button data-mode="rover">Rover</button><button data-mode="skim">Skim</button><button id="walkFast" aria-pressed="false">Fast</button><button id="walkJump">Jump</button><button id="walkShip">Ship</button><button id="walkSat">Look at Saturn</button><button id="walkExit">Back to orbit</button></div>
     <div class="pad"><button data-k="arrowleft" aria-label="Turn left">⟲</button><button data-k="w" aria-label="Forward">▲</button><button data-k="arrowright" aria-label="Turn right">⟳</button><button data-k="a" aria-label="Step left">◀</button><button data-k="s" aria-label="Back">▼</button><button data-k="d" aria-label="Step right">▶</button></div>
   </div>
-  <p class="help keys">W/S or ↑/↓ move · A/D step sideways · ←/→ or drag to look · Shift go faster · Space jump (gravity is 1/87 of Earth's) · Esc leave</p>
-  <p class="help touch">Drag the view to look around. Hold the arrows to move. Gravity is 1/87 of Earth's, so jumps last a long time.</p>
+  <p class="help keys walkonly">W/S or ↑/↓ move · A/D step sideways · ←/→ or drag to look · Shift go faster · Space jump (gravity is 1/87 of Earth's) · Esc leave</p>
+  <p class="help touch walkonly">Drag the view to look around. Hold the arrows to move. Gravity is 1/87 of Earth's, so jumps last a long time.</p>
+</div>
+<div id="shippad" class="hide deck">
+  <div class="cl stickc">
+    <div class="rollrow">
+      <button class="roll" data-k="q" aria-label="Roll left"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></svg><small>ROLL<span class="kb"> · Q</span></small></button>
+      <button class="roll" data-k="e" aria-label="Roll right"><small>ROLL<span class="kb"> · E</span></small><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/></svg></button>
+    </div>
+    <div class="stick">
+      <span class="ring"></span><span class="knob"></span>
+      <button class="su" data-k="arrowup" aria-label="Nose up"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg><small class="kb">↑</small></button>
+      <button class="sl" data-k="a arrowleft" aria-label="Turn left"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg><small class="kb">A</small></button>
+      <button class="sr" data-k="d arrowright" aria-label="Turn right"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg><small class="kb">D</small></button>
+      <button class="sd" data-k="arrowdown" aria-label="Nose down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg><small class="kb">↓</small></button>
+    </div>
+  </div>
+  <div class="cl thr">
+    <div class="drives">
+      <button class="t" data-k="shift" data-go="1" aria-label="Turbo">TURBO<small class="kb">SHIFT</small></button>
+      <button class="wp" data-k="f" data-go="1" aria-label="Warp">WARP<small class="kb">F</small></button>
+      <button class="in" data-k="j" data-go="1" aria-label="Intrastellar drive">INTRASTELLAR<small class="kb">J</small></button>
+    </div>
+    <div class="main">
+      <div class="lift"><button class="lu" data-k="space r" aria-label="Lift"><svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg><small>LIFT</small></button><button class="ld" data-k="c" aria-label="Drop"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg><small>DROP</small></button></div>
+      <div class="rb"><button class="rev" data-k="s" aria-label="Reverse">REV<small class="kb">S</small></button><button class="brk" data-k="x" aria-label="Brake">BRAKE<small class="kb">X</small></button></div>
+      <button class="go" data-k="w" aria-label="Go">GO<small class="kb">W</small></button>
+    </div>
+  </div>
+</div>
+<div class="card hide" id="appanel" role="dialog" aria-label="Autopilot">
+  <div class="aphead"><b>Autopilot</b><span id="apState">Off</span><button id="apClose" aria-label="Close autopilot">✕</button></div>
+  <div class="apmini"><span id="apStatus"></span><span class="apbtns"><button id="apEdit">Change</button><button id="apStop" class="stop">Disengage</button></span></div>
+  <label class="apf">Destination<select id="apDest"></select></label>
+  <div class="apf"><span>When you get there</span><div class="seg" id="apMode"><button data-m="orbit" class="on">Cruise in orbit</button><button data-m="hover">Hover</button><button data-m="land">Land</button></div></div>
+  <div class="apf two"><label>Altitude<span class="altin"><input id="apAlt" type="number" min="0" step="any" value="20" inputmode="decimal"><select id="apUnit"><option value="1000" selected>km</option><option value="1">m</option></select></span></label>
+  <label>Orbit speed<select id="apSpeed"><option value="1">Real</option><option value="10" selected>10x</option><option value="100">100x</option></select></label></div>
+  <p class="apnote" id="apNote"></p>
+  <button class="go" id="apGo">Engage autopilot</button>
+</div>
+<div id="flighthud" class="hide">
+  <div class="fh-alt"><span id="fhAltK">Altitude</span><b id="fhAlt">0 m</b><i id="fhVs">■ 0 m/s</i></div>
+  <div class="fh-col"><span>Speed</span><b id="fhSpd">0 m/s</b></div>
+  <div class="fh-col"><span>Drive</span><b id="fhMode">CRUISE</b></div>
+</div>
+<div class="card hide" id="shipmap">
+  <div class="head"><b>Map</b><button id="shipMapZoom">Zoom in</button></div>
+  <div class="body"><canvas id="shipmapc" title="Click to jump there"></canvas><canvas id="shipgauge"></canvas></div>
+  <div class="cap">You are the arrow, north is up. Orange: plume jets. Gold: under Saturn. Click to jump there.</div>
+</div>
+<div id="flybar">
+  <button id="flyMapBtn" aria-pressed="false" aria-label="Map"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></button>
+  <button id="flyMenuBtn" aria-pressed="false" aria-label="Ship panel"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+</div>
+<div id="flymsg" aria-live="polite"></div>
+<div class="card" id="callcard" role="dialog" aria-label="Call sign">
+  <label for="callsign">Your call sign <span>(optional: others see it on your ship)</span></label>
+  <div class="row"><input id="callsign" maxlength="24" autocomplete="nickname" enterkeyhint="go" spellcheck="false"><button class="go" id="callGo">Go</button><button id="callSkip">Skip</button></div>
 </div>
 <div class="card" id="roverhint"><span>Click a spot on the moon to set up a 19 km rover work area there</span><button class="go" id="roverStripes">Between Baghdad and Damascus</button><button id="roverCancel">Cancel</button></div>
 <div class="card hide" id="roverpanel">
@@ -548,6 +819,7 @@ body.walking #layers,body.walking #ctrls{display:none}
   <span id="cam"></span>
 </div>
 
+<script>window.ENC_MP_URL = 'wss://enceladus-relay.enceladus-relay-cloudflare.workers.dev';   // shared-world relay (multiplayer/cloudflare)</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.123.0/Cesium.js"></script>
 <script src="features.js"></script>
 <script src="hires.js" onerror="window.ENC_HIRES=null"></script>
@@ -1048,6 +1320,9 @@ scene.postRender.addEventListener(() => {
   const c = camera.positionCartographic; camEl.textContent = 'Camera ' + (c.height / 1000).toFixed(c.height < 1e5 ? 1 : 0) + ' km';
 });
 
+// a shared link can start a flight in orbit space, 40,000 km out with Saturn ahead: .../#fly=space
+// (read now: the page rewrites the hash with the camera view as it loads)
+const flyLink = /(?:^#|\/)fly=space\b/.test(location.hash);
 const hadView = readHash();
 if (!hadView) home();
 placeOnTerrain().then(() => { if (state.sel) { const o = index.find(o => (o.kind === 'feature' ? o.name : o.id) === state.sel); if (o) showInfo(o); } });
@@ -1491,6 +1766,8 @@ if (INT) {
 } else $('chipDive').classList.add('hide');
 
 /*__WALK__*/
+/*__FLY__*/
+/*__MP__*/
 /*__ROVER__*/
 /*__LIFE__*/
 /*__TOUR__*/
@@ -1499,6 +1776,10 @@ window.encRover = rover;
 window.encLife = life;
 window.encViewer = viewer;
 window.encWalk = walk;
+window.encShip = ship;
+window.encMp = mp;
+window.encPad = pad;
+if (flyLink) setTimeout(() => { walk.begin(true); walk.land(5, 0); if (ship.on) ship.startInSpace(); }, 0);
 })();
 </script>
 </body>
