@@ -131,6 +131,11 @@ function puffPng(N = 64) {
   let s = ''; for (const x of png) s += String.fromCharCode(x);
   return 'data:image/png;base64,' + btoa(s);
 }
+// How hazy a direction is from inside a ring: the optical depth of ring on that side of you (tauUp above, tauDown below)
+// over the sine of the angle to the ring plane, so the haze is thick along the plane and thin straight up or down.
+// Shared by the ring picture here and the haze shell in globe_rings.js.
+const RING_HAZE_GLSL = 'float ringHaze(vec3 dirEC, vec3 nEC, float up, float down) { float s = dot(dirEC, nEC); float t = s > 0.0 ? up : down;'
+  + ' return 1.0 - exp(-t / max(abs(s), 0.03)); }\n';
 function sky(on) {
   if (scene.skyBox) scene.skyBox.show = on;
   if (on && !skyObjs) {
@@ -150,10 +155,14 @@ function sky(on) {
         position: new C.GeometryAttribute({ componentDatatype: C.ComponentDatatype.DOUBLE, componentsPerAttribute: 3, values: new Float64Array(pos) }),
         st: new C.GeometryAttribute({ componentDatatype: C.ComponentDatatype.FLOAT, componentsPerAttribute: 2, values: new Float32Array(st) }) },
         indices: new Uint16Array(idx), primitiveType: C.PrimitiveType.TRIANGLES, boundingSphere: new C.BoundingSphere(C.Cartesian3.ZERO, r1) }) }),
-      // the ring picture, with a hole around the eye (holeR, in the sky's 1/SKY_K units) where globe_rings.js draws the real particles
-      appearance: new C.MaterialAppearance({ material: new C.Material({ translucent: true, fabric: { type: 'RingImage', uniforms: { image: 'saturn-ring.png', holeR: 0 },
-        source: 'czm_material czm_getMaterial(czm_materialInput mi) { czm_material m = czm_getDefaultMaterial(mi); vec4 c = texture(image, mi.st);'
-          + ' float k = holeR > 0.0 ? smoothstep(holeR * 0.6, holeR, length(mi.positionToEyeEC)) : 1.0; m.diffuse = c.rgb; m.alpha = c.a * k; return m; }' } }), translucent: true, flat: true,
+      // the ring picture, with a hole around the eye (holeR, in the sky's 1/SKY_K units) where globe_rings.js draws the real
+      // particles, and hazed by the ring around you when you are inside the layer (tauUp/tauDown, set by globe_rings.js)
+      appearance: new C.MaterialAppearance({ material: new C.Material({ translucent: true, fabric: { type: 'RingImage',
+        uniforms: { image: 'saturn-ring.png', holeR: 0, tauUp: 0, tauDown: 0, normalEC: new C.Cartesian3(0, 0, 1), hazeColor: new C.Color(0.5, 0.5, 0.5, 1) },
+        source: RING_HAZE_GLSL + 'czm_material czm_getMaterial(czm_materialInput mi) { czm_material m = czm_getDefaultMaterial(mi); vec4 c = texture(image, mi.st);'
+          + ' float k = holeR > 0.0 ? smoothstep(holeR * 0.6, holeR, length(mi.positionToEyeEC)) : 1.0;'
+          + ' float h = ringHaze(normalize(-mi.positionToEyeEC), normalize(normalEC), tauUp, tauDown);'
+          + ' m.diffuse = mix(c.rgb, hazeColor.rgb, h); m.alpha = c.a * k; return m; }' } }), translucent: true, flat: true,
         faceForward: true, closed: false, materialSupport: C.MaterialAppearance.MaterialSupport.TEXTURED }) }));
     // plumes: each mapped jet source (Porco et al. 2014) sprays a widening, flickering spray of ice grains, leaning by
     // its measured tilt from vertical, brighter where the jet was seen more often. Which way each one leans isn't in the

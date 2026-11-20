@@ -68,11 +68,13 @@ const ringField = (() => {
       const q = new C.Cartesian3(ix * b.S + R() * b.S, iy * b.S + R() * b.S, z0 + R() * HZ), sh = 0.7 + 0.3 * R();
       const col = new C.Color(Math.min(1, tint[0] / lum * sh), Math.min(1, tint[1] / lum * sh), Math.min(1, tint[2] / lum * sh), 1);
       out.push({ q, bb: coll.add({ position: C.Cartesian3.add(q, off, new C.Cartesian3()), image: sprites[Math.floor(R() * 4)], width: 2 * rad, height: 2 * rad,
-        sizeInMeters: true, color: col, rotation: R() * 6.2832 }) });
+        sizeInMeters: true, color: col, rotation: R() * 6.2832,
+        translucencyByDistance: new C.NearFarScalar(b.R * 0.5, 1, b.R, 0) }) });      // fade into the haze shell at the edge of the drawn particles
     }
     return out;
   }
   function updateBand(b, qShip, rS, t, s, R) {
+    b.R = R;
     const ix0 = Math.floor(qShip.x / b.S), iy0 = Math.floor(qShip.y / b.S), cr = Math.ceil(R / b.S), zr = Math.ceil(3 * s / HZ);
     const key = `${ix0},${iy0},${cr},${zr},${Math.floor(qShip.z / HZ)}`;
     if (key === b.key) return; b.key = key;
@@ -84,20 +86,54 @@ const ringField = (() => {
     for (const [k, list] of b.cells) if (!want.has(k)) { for (const p of list) coll.remove(p.bb); b.cells.delete(k); }
     for (const k of want) if (!b.cells.has(k)) { const [x, y, z] = k.split(',').map(Number); b.cells.set(k, fill(b, x, y, z)); }
   }
-  const haze = () => $('ringhaze');
+  // ---- the haze, in the scene rather than over it ----
+  // A shell around the camera, at the edge of the drawn particles, stands for all the ring beyond them. How opaque it
+  // is depends on direction: the optical depth of ring left above you (or below) divided by the sine of the angle to
+  // the ring plane. Along the plane that is many kilometres of ring, so nearly opaque; straight up or down it is only
+  // the few metres of layer on that side, so Saturn and the stars show through. Near particles and the ship stay
+  // sharp, and particles fade into it with distance. The ring picture (globe_walk.js) is hazed by the same rule.
+  const erf = x => { const s = Math.sign(x), a = Math.abs(x), t = 1 / (1 + 0.3275911 * a);
+    return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a)); };
+  const haze = { tau: 0, sigma: 10, R: 50, color: new C.Color(0.5, 0.5, 0.5, 1), on: false };
+  let shell = null;
+  function makeShell() {
+    shell = scene.primitives.add(new C.Primitive({ asynchronous: false, cull: false,
+      geometryInstances: new C.GeometryInstance({ geometry: new C.EllipsoidGeometry({ radii: new C.Cartesian3(1, 1, 1),
+        vertexFormat: C.MaterialAppearance.MaterialSupport.BASIC.vertexFormat, stackPartitions: 32, slicePartitions: 64 }) }),
+      appearance: new C.MaterialAppearance({ translucent: true, closed: false, flat: true, materialSupport: C.MaterialAppearance.MaterialSupport.BASIC,
+        material: new C.Material({ translucent: true, fabric: { type: 'RingHaze', uniforms: { hazeColor: new C.Color(0.5, 0.5, 0.5, 1), tauUp: 0, tauDown: 0, normalEC: new C.Cartesian3(0, 0, 1) },
+          source: RING_HAZE_GLSL + 'czm_material czm_getMaterial(czm_materialInput mi) { czm_material m = czm_getDefaultMaterial(mi);'
+            + ' m.diffuse = hazeColor.rgb; m.alpha = min(0.97, ringHaze(normalize(-mi.positionToEyeEC), normalize(normalEC), tauUp, tauDown)); return m; }' } }) }) }));
+    shell.show = false;
+  }
+  const _m = new C.Matrix4(), _n = new C.Cartesian3();
+  // every render (the main view and each ship camera): put the shell round that camera and aim the haze rule at it
+  function syncCamera() {
+    const rings = skyObjs && skyObjs.rings, mat = rings && rings.appearance.material;
+    const cz = camera.positionWC.z, s = haze.sigma, inside = haze.on && Math.abs(cz) < 4 * s;
+    const up = inside ? haze.tau * 0.5 * (1 - erf(cz / (s * Math.SQRT2))) : 0, down = inside ? haze.tau * 0.5 * (1 + erf(cz / (s * Math.SQRT2))) : 0;
+    C.Matrix4.multiplyByPointAsVector(camera.viewMatrix, C.Cartesian3.UNIT_Z, _n); C.Cartesian3.normalize(_n, _n);
+    if (mat && mat.uniforms.tauUp !== undefined) { mat.uniforms.tauUp = up; mat.uniforms.tauDown = down; mat.uniforms.normalEC = C.Cartesian3.clone(_n, mat.uniforms.normalEC); mat.uniforms.hazeColor = haze.color; }
+    if (!shell) return;
+    shell.show = inside;
+    if (!inside) return;
+    const u = shell.appearance.material.uniforms; u.tauUp = up; u.tauDown = down; u.normalEC = C.Cartesian3.clone(_n, u.normalEC); u.hazeColor = haze.color;
+    C.Matrix4.fromTranslation(camera.positionWC, _m); C.Matrix4.multiplyByUniformScale(_m, haze.R, _m);
+    shell.modelMatrix = C.Matrix4.clone(_m, shell.modelMatrix);
+  }
+  scene.preRender.addEventListener(() => { try { syncCamera(); } catch (err) { console.error(err); } });
   return {
     tau: r => (tau ? tau[idx(r)] : 0), sigma, region,
     // called every frame while flying (after the ship has moved)
     update(dt) {
       const S = ship, p = S.p, x = p.x - SATURN_D, rho = Math.hypot(x, p.y), az = Math.abs(p.z);
       const on = tau && walk.on && walk.mode === 'ship' && S.on && !S.crashed && S.space && rho > R0 && rho < R1 && az < 400;
-      const hz = haze();
       if (!on) {
-        if (active) { clearAll(); active = false; hz.style.opacity = 0; if (skyObjs && skyObjs.rings) skyObjs.rings.appearance.material.uniforms.holeR = 0; }
+        if (active) { clearAll(); active = false; haze.on = false; if (skyObjs && skyObjs.rings) skyObjs.rings.appearance.material.uniforms.holeR = 0; }
         if (az > 5000 || rho < R0 || rho > R1) C.Cartesian3.clone(C.Cartesian3.ZERO, off);
         return;
       }
-      if (!coll) { coll = scene.primitives.add(new C.BillboardCollection({ scene })); sprites = makeSprites(); }
+      if (!coll) { coll = scene.primitives.add(new C.BillboardCollection({ scene })); sprites = makeSprites(); makeShell(); }
       active = true;
       // the particles orbit at the local circular speed (prograde, about Saturn's pole = +z)
       const vk = Math.sqrt(GM_SAT / rho); _vk.x = -p.y / rho * vk; _vk.y = x / rho * vk; _vk.z = 0;
@@ -117,10 +153,9 @@ const ringField = (() => {
       for (const b of BANDS) for (const list of b.cells.values()) for (const pt of list) pt.bb.position = C.Cartesian3.add(pt.q, off, _w);
       // the flat ring picture: a hole around you, where the real particles take over
       if (skyObjs && skyObjs.rings) skyObjs.rings.appearance.material.uniforms.holeR = reach * 0.9 / SKY_K;
-      // inside the layer, the countless smaller grains (and everything past the drawn particles) are a haze
-      const g = Math.exp(-p.z * p.z / (2 * s * s)), op = Math.min(0.92, (1 - Math.exp(-t * g * 1.5)));
-      hz.style.opacity = op.toFixed(3);
-      hz.style.background = `rgb(${Math.round(rgb[i * 3] * 150)},${Math.round(rgb[i * 3 + 1] * 150)},${Math.round(rgb[i * 3 + 2] * 150)})`;
+      // the haze beyond the drawn particles (applied per render in syncCamera): this ring's depth, thickness and colour
+      haze.on = true; haze.tau = t; haze.sigma = s; haze.R = Math.max(20, reach);
+      haze.color = new C.Color(rgb[i * 3] * 0.8, rgb[i * 3 + 1] * 0.8, rgb[i * 3 + 2] * 0.8, 1);
     },
     // a line for the ship panel, or null when not near the rings
     status(p) {

@@ -497,8 +497,6 @@ body.flying.clean #shippad.deck,body.flying.clean #flighthud{bottom:14px}
 #callcard button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:16px;padding:6px 14px;font:500 13px Inter,sans-serif;cursor:pointer}
 #callcard button.go{background:#e9edf3;color:#0b1220;font-weight:600}
 @media (max-width:640px),(max-height:520px){body.flying #callcard{top:58px}}
-/* ---- inside the rings: the haze of grains too small to draw, thick enough in the B ring to hide all but metres ---- */
-#ringhaze{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .25s}
 /* ---- ship cameras: picture-in-picture views from the belly, the tail and the wingtips ---- */
 #cambar,#pips{display:none}
 body.flying #cambar{display:flex;flex-direction:column;gap:6px;position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:8}
@@ -750,7 +748,6 @@ body.flying #pips{display:grid;grid-template-columns:repeat(2,auto);gap:6px;posi
   <button data-cam="right" aria-pressed="false" title="Right wingtip camera (4)"><svg viewBox="0 0 24 24"><path d="M20 12H8"/><path d="M16 8l4 4-4 4"/><path d="M4 5v14"/></svg><small>RIGHT</small></button>
 </div>
 <div id="pips"></div>
-<div id="ringhaze" aria-hidden="true"></div>
 <div class="card" id="callcard" role="dialog" aria-label="Call sign">
   <label for="callsign">Call sign <span>(optional, others see it on your ship; or just start flying)</span></label>
   <div class="row"><input id="callsign" maxlength="24" autocomplete="nickname" enterkeyhint="go" spellcheck="false"><button class="go" id="callGo">Go</button><button id="callSkip">Skip</button></div>
