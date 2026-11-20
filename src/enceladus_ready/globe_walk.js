@@ -2,7 +2,8 @@
 // Real numbers: surface gravity 0.113 m/s2 (about 1/87 of Earth's), so an easy 2 m/s hop rises about 18 m and
 // lasts about 35 s. Enceladus keeps one face to Saturn, so Saturn hangs still in the sky over 0 degrees longitude,
 // 238,000 km away and nearly 28 degrees across, its rings almost edge-on because Enceladus orbits in the ring plane.
-const G_ENC = 0.113, SATURN_D = 238042e3, SATURN_R = 58232e3;
+// SATURN_R is the equatorial radius at the 1-bar level (60,268 km); the poles are 0.902 of it (54,364 km).
+const G_ENC = 0.113, SATURN_D = 238042e3, SATURN_R = 60268e3;
 const walk = {
   on: false, picking: false, landing: 0, lat: 0, lon: 0, head: 0, pitch: 0.08, z: 0, vz: 0, ground: null,
   mode: 'walk', keys: new Set(), last: 0, savedEx: null, look: null, fast: false,
@@ -52,6 +53,9 @@ const walk = {
   frame(now) {
     const dt = Math.min(0.1, (now - (this.last || now)) / 1000); this.last = now;
     const k = this.keys, m = this.mode;
+    // the call sign card never holds anyone up: the first touch of any control (keys, the on-screen pad, a controller's
+    // sticks) closes it, keeping whatever was typed, or nothing (an anonymous "Pilot 1234")
+    if (mp.asking() && (k.size || ship.ax.pitch || ship.ax.yaw || ship.ax.roll)) mp.closeAsk(!!$('callsign').value.trim());
     if (m === 'ship') {
       ship.step(dt); ship.camera(); ship.fhud(); placeSky();
       if (!this._h || now - this._h > 250) { this._h = now; this.hud(); }

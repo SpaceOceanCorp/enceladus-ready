@@ -146,12 +146,15 @@ const mp = {
     card.classList.add('open');
     if (!matchMedia('(hover: none), (pointer: coarse)').matches) setTimeout(() => inp.focus(), 50);   // no surprise keyboard on phones
   },
+  asking() { return $('callcard').classList.contains('open'); },
   closeAsk(save) {
     if (save) this.setName($('callsign').value);
     $('callcard').classList.remove('open'); $('callsign').blur();
   },
 };
 $('callGo').onclick = () => mp.closeAsk(true);
+// touching any flight control (gears included) closes the card too, keeping whatever was typed
+$('shippad').addEventListener('pointerdown', () => { if (mp.asking()) mp.closeAsk(!!$('callsign').value.trim()); }, true);
 $('callSkip').onclick = () => mp.closeAsk(false);
 $('callsign').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') mp.closeAsk(true); if (e.key === 'Escape') mp.closeAsk(false); });
 $('callsign').addEventListener('keyup', e => e.stopPropagation());
