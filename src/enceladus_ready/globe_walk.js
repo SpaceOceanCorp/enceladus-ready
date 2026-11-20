@@ -57,7 +57,9 @@ const walk = {
     // sticks) closes it, keeping whatever was typed, or nothing (an anonymous "Pilot 1234")
     if (mp.asking() && (k.size || ship.ax.pitch || ship.ax.yaw || ship.ax.roll)) mp.closeAsk(!!$('callsign').value.trim());
     if (m === 'ship') {
-      ship.step(dt); ship.camera(); ship.fhud(); placeSky();
+      ship.step(dt);
+      try { ringField.update(dt); } catch (err) { console.error(err); }   // ring particles move with the very same time step as the ship
+      ship.camera(); ship.fhud(); placeSky();
       if (!this._h || now - this._h > 250) { this._h = now; this.hud(); }
       return;
     }
@@ -148,7 +150,10 @@ function sky(on) {
         position: new C.GeometryAttribute({ componentDatatype: C.ComponentDatatype.DOUBLE, componentsPerAttribute: 3, values: new Float64Array(pos) }),
         st: new C.GeometryAttribute({ componentDatatype: C.ComponentDatatype.FLOAT, componentsPerAttribute: 2, values: new Float32Array(st) }) },
         indices: new Uint16Array(idx), primitiveType: C.PrimitiveType.TRIANGLES, boundingSphere: new C.BoundingSphere(C.Cartesian3.ZERO, r1) }) }),
-      appearance: new C.MaterialAppearance({ material: C.Material.fromType('Image', { image: 'saturn-ring.png', transparent: true }), translucent: true, flat: true,
+      // the ring picture, with a hole around the eye (holeR, in the sky's 1/SKY_K units) where globe_rings.js draws the real particles
+      appearance: new C.MaterialAppearance({ material: new C.Material({ translucent: true, fabric: { type: 'RingImage', uniforms: { image: 'saturn-ring.png', holeR: 0 },
+        source: 'czm_material czm_getMaterial(czm_materialInput mi) { czm_material m = czm_getDefaultMaterial(mi); vec4 c = texture(image, mi.st);'
+          + ' float k = holeR > 0.0 ? smoothstep(holeR * 0.6, holeR, length(mi.positionToEyeEC)) : 1.0; m.diffuse = c.rgb; m.alpha = c.a * k; return m; }' } }), translucent: true, flat: true,
         faceForward: true, closed: false, materialSupport: C.MaterialAppearance.MaterialSupport.TEXTURED }) }));
     // plumes: each mapped jet source (Porco et al. 2014) sprays a widening, flickering spray of ice grains, leaning by
     // its measured tilt from vertical, brighter where the jet was seen more often. Which way each one leans isn't in the
@@ -208,7 +213,11 @@ function animPlumes(now) {
     g.bb.color = g.col; g.bb.width = w; g.bb.height = w;
   }
 }
-scene.preRender.addEventListener(() => { if (walk.on) walk.frame(performance.now()); });
+// The frame clock: the browser's animation time ticks exactly once per displayed frame, so motion advances in even
+// steps. Reading performance.now() inside the render instead gave steps of 7 to 21 ms at a steady 60 fps, which
+// made everything moving judder (most visibly far out in orbit space and among the ring particles).
+const frameNow = () => { const t = document.timeline && document.timeline.currentTime; return typeof t === 'number' ? t : performance.now(); };
+scene.preRender.addEventListener(() => { if (walk.on && !window.encPipPass) walk.frame(frameNow()); });   // not during a ship-camera pass
 window.addEventListener('keydown', e => {
   if (!walk.on || (e.target.closest && e.target.closest('input, textarea, select'))) return;
   const k = e.key.toLowerCase();
@@ -217,6 +226,8 @@ window.addEventListener('keydown', e => {
     if (k === 'v' && !e.repeat) { $('shipView').click(); return; }
     if (k === 'p' && !e.repeat) { $('shipAuto').click(); return; }
     if (k === 'h' && !e.repeat) { ship.toggleClean(); return; }
+    const camKey = { 1: 'down', 2: 'rear', 3: 'left', 4: 'right' }[k];
+    if (camKey && !e.repeat) { ship.pip.toggle(camKey); return; }
     if (['r', 'f', 'j', 'c', 'x', ' '].includes(k)) { e.preventDefault(); walk.keys.add(k); return; }
   }
   if (k === ' ') { e.preventDefault(); walk.jump(); return; }

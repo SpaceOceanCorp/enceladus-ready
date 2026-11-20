@@ -158,6 +158,6 @@ $('shippad').addEventListener('pointerdown', () => { if (mp.asking()) mp.closeAs
 $('callSkip').onclick = () => mp.closeAsk(false);
 $('callsign').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') mp.closeAsk(true); if (e.key === 'Escape') mp.closeAsk(false); });
 $('callsign').addEventListener('keyup', e => e.stopPropagation());
-scene.preRender.addEventListener(() => mp.frame(performance.now()));
+scene.preRender.addEventListener(() => { if (!window.encPipPass) mp.frame(performance.now()); });
 if (!MP_URL) $('walkhud').classList.add('nomp');
 for (const id of ['shipmp', 'walkmp']) { $(id).onclick = () => mp.rename(); $(id).title = 'Click to change your name'; }

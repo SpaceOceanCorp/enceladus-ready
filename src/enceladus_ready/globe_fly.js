@@ -22,6 +22,17 @@ const satR = n => SATURN_R / Math.sqrt(1 - n.z * n.z + (n.z * n.z) / (0.902 * 0.
 const _sa = new C.Cartesian3();
 const satAlt = p => { const d = C.Cartesian3.subtract(p, SAT, _sa), r = C.Cartesian3.magnitude(d); return r - satR(C.Cartesian3.divideByScalar(d, r, d)); };
 const J_HINT = matchMedia('(hover: none), (pointer: coarse)').matches ? 'tap INTRASTELLAR, then hold GO to cross.' : 'hold INTRASTELLAR (J) to cross.';
+// Near the ring plane over the rings (within 5 km), the ship keeps pace with the ring particles' orbit: this gives
+// that circular orbital velocity (prograde about Saturn's pole) in out, and returns how fully it applies: 1 within
+// 1 km of the plane, fading to 0 at 5 km. ringFrame.over() says whether you are over the rings at all.
+const _vring = new C.Cartesian3(), _rv = new C.Cartesian3();
+function ringFrame(p, out) {
+  const x = p.x - SATURN_D, rho = Math.hypot(x, p.y), az = Math.abs(p.z);
+  if (rho < 74000e3 || rho > 141000e3 || az > 5000) { out.x = out.y = out.z = 0; return 0; }
+  const v = Math.sqrt(3.7931e16 / rho); out.x = -p.y / rho * v; out.y = x / rho * v; out.z = 0;
+  return clamp((5000 - az) / 4000, 0, 1);
+}
+ringFrame.over = p => { const rho = Math.hypot(p.x - SATURN_D, p.y); return rho > 74000e3 && rho < 141000e3; };
 const MODE_NAME = { turbo: 'TURBO', warp: 'WARP', intra: 'INTRASTELLAR' };
 // Fuels. The exhaust colour is roughly how each really burns; Isp (seconds) is its efficiency, which sets how fast the
 // tank drains (WARP and INTRASTELLAR use none). Thrust is the same for every fuel, so the ship handles alike.
@@ -76,6 +87,8 @@ const ship = {
   ax: { pitch: 0, yaw: 0, roll: 0 },   // analog steering from a gamepad or flight stick, -1..1 (0 when none)
   fwdGlow: 0, upGlow: 0, msg: '', msgT: 0, prims: null, M: new C.Matrix4(),
   say(t) { this.msg = t; this.msgT = performance.now(); },
+  // speed relative to what you are flying among: near the ring plane, the ring particles; elsewhere, the scene
+  relSpeed() { const w = ringFrame(this.p, _rv); return w ? V3.magnitude(V3.subtract(this.v, V3.multiplyByScalar(_rv, w, _rv), _rv)) : V3.magnitude(this.v); },
   // back to cruise: a new or reboarded ship never starts in a fast gear
   clearGear() { this.gear = null; document.querySelectorAll('#shippad .sel').forEach(b => b.classList.remove('sel')); },
   // heading, pitch, roll (degrees) in the local east-north-up frame, as the shared-world protocol uses
@@ -218,6 +231,7 @@ const ship = {
     $('shippad').classList.add('hide'); $('shipmap').classList.add('hide'); $('flighthud').classList.add('hide');
     if (this.fireball) this.fireball.show = false; this.crashed = false;
     this.ap = null; $('appanel').classList.add('hide');
+    try { ringField.update(0); } catch (_) {}   // out of the ship: clear any ring particles and haze
   },
   // into the ice too fast: a fireball, then a fresh ship hovering over the same spot
   crash(speed, what = 'the ice') {
@@ -286,8 +300,12 @@ const ship = {
     this.orthonormalize();
     const toS = V3.subtract(this.p, SAT, _t3);
     this.dS = satAlt(this.p); this.dE = V3.magnitude(this.p) - R;
-    const V = Math.min(LIGHT, SPACE_K[this.mode] * Math.max(20e3, Math.min(this.dS, this.dE)));   // nothing beats light
+    // over the rings, speed also scales with height above the ring plane, so you can creep in among the particles
+    const wRing = ringFrame(this.p, _vring), overRings = ringFrame.over(this.p);
+    const dist = overRings ? Math.max(300, Math.min(this.dS, this.dE, Math.abs(this.p.z))) : Math.max(20e3, Math.min(this.dS, this.dE));
+    const V = Math.min(LIGHT, SPACE_K[this.mode] * dist);   // nothing beats light
     comb(_vt, brake ? 0 : fwd > 0 ? V : fwd < 0 ? -0.4 * V : 0, this.f, brake ? 0 : up ? 0.5 * V : down ? -0.5 * V : 0, this.u);
+    if (wRing) V3.add(_vt, V3.multiplyByScalar(_vring, wRing, _t1), _vt);   // near the ring plane, "stopped" means keeping pace with the ring
     V3.multiplyByScalar(V3.subtract(_vt, this.v, _a), Math.min(1, dt * (brake ? 4 : 2)), _a);
     V3.add(this.v, _a, this.v);
     V3.add(this.p, V3.multiplyByScalar(this.v, dt, _t2), this.p);
@@ -448,7 +466,7 @@ const ship = {
   // the altimeter strip (bottom centre): height, climb rate, speed and drive every frame, with a warning before impact
   fhud() {
     const el = this._fh || (this._fh = { box: $('flighthud'), alt: $('fhAlt'), altK: $('fhAltK'), vs: $('fhVs'), spd: $('fhSpd'), mode: $('fhMode') });
-    const spd = V3.magnitude(this.v);
+    const spd = this.relSpeed();
     if (this.crashed) {
       el.box.className = 'crash'; el.altK.textContent = 'Altitude'; el.alt.textContent = 'CRASHED'; el.vs.textContent = 'new ship coming'; el.spd.textContent = '—'; el.mode.textContent = '—';
       return;
@@ -456,6 +474,13 @@ const ship = {
     if (this.space) {
       el.box.className = 'space'; el.altK.textContent = this.inSat ? "Above Saturn's clouds" : 'To Saturn';
       el.alt.textContent = fmtD(this.dS); el.vs.textContent = `Enceladus ${fmtD(this.dE)}`;
+      const name = ringField.region(Math.hypot(this.p.x - SATURN_D, this.p.y)), z = this.p.z;
+      if (name && Math.abs(z) < 50e3) {      // close to the rings: the readout becomes a ring-plane altimeter
+        const inside = Math.abs(z) < 2 * ringField.sigma(Math.hypot(this.p.x - SATURN_D, this.p.y));
+        el.altK.textContent = inside ? `Inside the ${name}` : `${z > 0 ? 'North' : 'South'} of the ${name}`;
+        el.alt.textContent = inside ? `${z >= 0 ? '+' : '−'}${Math.abs(z).toFixed(1)} m` : fmtD(Math.abs(z));
+        el.vs.textContent = Math.abs(z) < 5000 ? 'speed: relative to the ring' : `Saturn ${fmtD(this.dS)}`;
+      }
     } else {
       enuAt(this.p); const vs = V3.dot(this.v, _U), a = Math.max(0, this.alt);
       const danger = !this.ap && !this.landed && !this.settling && vs < -1 && a / -vs < 4 && a < 5000;
@@ -472,7 +497,7 @@ const ship = {
     const fm = $('flymsg'), fresh = performance.now() - this.msgT < 9000 && this.msg ? this.msg : '';   // phones: messages show under the readout
     if (fm.textContent !== fresh) fm.textContent = fresh;
     if (this.space) {
-      const spd = V3.magnitude(this.v), mass = SHIP.dry + this.fuel, dv = this.isp() * G0 * Math.log(mass / SHIP.dry);
+      const spd = this.relSpeed(), mass = SHIP.dry + this.fuel, dv = this.isp() * G0 * Math.log(mass / SHIP.dry);
       $('shippad').classList.remove('hide'); $('shipmap').classList.remove('hide');
       sysMap.draw();
       $('walktitle').textContent = (this.inSat ? 'Saturn area' : 'Orbit space') + (MODE_NAME[this.mode] ? ' · ' + MODE_NAME[this.mode] : '');
@@ -482,7 +507,7 @@ const ship = {
       $('shipatt').textContent = `Enceladus is ${fmtD(this.dE)} away`;
       $('shipfuel').textContent = this.infinite ? 'Unlimited' : `${Math.round(100 * this.fuel / SHIP.prop)}% · ${(dv / 1000).toFixed(0)} km/s of Δv`;
       $('shipstat').textContent = performance.now() - this.msgT < 9000 && this.msg ? this.msg
-        : this.inSat ? 'In the Saturn area' : 'Between Enceladus and Saturn';
+        : ringField.status(this.p) || (this.inSat ? 'In the Saturn area' : 'Between Enceladus and Saturn');
       $('shipmp').textContent = mp.summary();
       $('shipView').textContent = 'View: ' + VIEWS[this.view].name;
       $('shipOut').disabled = true; $('shipRefuel').disabled = true;
@@ -714,6 +739,9 @@ const AP_DESTS = (() => {
     { id: 'satcloud', body: 'sat', alt: 10000, label: 'Saturn · above the clouds, facing Enceladus', get: () => ({ body: 'sat', dir: new V3(-1, 0, 0) }) },
     { id: 'satpole', body: 'sat', alt: 15000, label: 'Saturn · over the north-pole hexagon', get: () => ({ body: 'sat', dir: new V3(0, 0, 1) }) },
     { id: 'cassini', body: 'sat', alt: Math.round((119875e3 - SATURN_R) / 1e3), label: 'Saturn · the Cassini Division, in the ring plane', get: () => ({ body: 'sat', dir: new V3(-1, 0, 0), plane: true, zOff: 0 }) },
+    { id: 'ina', body: 'sat', alt: Math.round((128000e3 - SATURN_R) / 1e3), label: 'Saturn · inside the A ring, among the particles', get: () => ({ body: 'sat', dir: new V3(-1, 0, 0), plane: true, zOff: 0 }) },
+    { id: 'inb', body: 'sat', alt: Math.round((105000e3 - SATURN_R) / 1e3), label: 'Saturn · inside the B ring (dense: you see only metres)', get: () => ({ body: 'sat', dir: new V3(-1, 0, 0), plane: true, zOff: 0 }) },
+    { id: 'inc', body: 'sat', alt: Math.round((84000e3 - SATURN_R) / 1e3), label: 'Saturn · inside the C ring (sparse and dark)', get: () => ({ body: 'sat', dir: new V3(-1, 0, 0), plane: true, zOff: 0 }) },
     { id: 'aring', body: 'sat', alt: Math.round((130000e3 - SATURN_R) / 1e3), label: 'Saturn · skimming 400 km over the A ring', get: () => ({ body: 'sat', dir: new V3(-1, 0, 0), plane: true, zOff: 400e3 }) },
   ];
   for (const f of [...(window.ENC_FEATURES || [])].sort((a, b) => a.name.localeCompare(b.name)))
@@ -1031,3 +1059,60 @@ window.addEventListener('gamepadconnected', e => {
   if (!pad.raf) pad.loop();
 });
 window.addEventListener('gamepaddisconnected', () => { if (!pad.first()) { cancelAnimationFrame(pad.raf); pad.raf = 0; pad.release(); invBtn.hidden = true; } });
+// ---------- ship cameras: live picture-in-picture views from the belly, the tail and each wingtip ----------
+// While any is open, the page runs its own frame loop: each frame it renders one ship camera (taking turns when
+// several are open), copies that into its window, then renders the main view as usual. The camera pass sets
+// window.encPipPass so the flight and shared-world updates still run only once per frame.
+const pip = {
+  on: new Map(), i: 0, raf: 0,
+  // where each camera sits on the ship (metres forward, right, up) and which way it looks
+  CAMS: { down: { at: [0.5, 0, -2.4], look: 'down', name: 'DOWN' }, rear: { at: [-9, 0, 1.6], look: 'back', name: 'REAR' },
+    left: { at: [-4.4, -8.2, 0], look: 'left', name: 'LEFT' }, right: { at: [-4.4, 8.2, 0], look: 'right', name: 'RIGHT' } },
+  toggle(id) {
+    const btn = document.querySelector(`#cambar [data-cam="${id}"]`);
+    if (this.on.has(id)) { this.on.get(id).el.remove(); this.on.delete(id); btn.setAttribute('aria-pressed', 'false'); }
+    else {
+      const el = document.createElement('div'); el.className = 'pip'; el.title = 'Close this camera';
+      el.innerHTML = `<canvas></canvas><b>${this.CAMS[id].name}</b>`; el.onclick = () => this.toggle(id);
+      $('pips').appendChild(el); this.on.set(id, { el, cv: el.querySelector('canvas') }); btn.setAttribute('aria-pressed', 'true');
+    }
+    if (this.on.size && !this.raf) { viewer.useDefaultRenderLoop = false; this.loop(); }
+    if (!this.on.size && this.raf) { cancelAnimationFrame(this.raf); this.raf = 0; viewer.useDefaultRenderLoop = true; }
+  },
+  closeAll() { for (const id of [...this.on.keys()]) this.toggle(id); },
+  loop() {
+    this.raf = requestAnimationFrame(() => this.loop());
+    if (!(walk.on && walk.mode === 'ship')) { this.closeAll(); return; }   // left the ship: back to the normal loop
+    try {
+      viewer.resize();
+      if (ship.on && !ship.crashed) this.pass();
+      viewer.render();
+    } catch (err) { console.error(err); window.encPipPass = false; this.closeAll(); }
+  },
+  pass() {
+    const ids = [...this.on.keys()], id = ids[this.i++ % ids.length], cam = this.CAMS[id], S = ship;
+    const pos = comb(new V3(), 1, S.p, cam.at[0], S.f, cam.at[2], S.u); comb(pos, 1, pos, cam.at[1], S.r);
+    const dir = { down: V3.negate(S.u, new V3()), back: V3.negate(S.f, new V3()), left: V3.negate(S.r, new V3()), right: V3.clone(S.r) }[cam.look];
+    const up = cam.look === 'down' ? V3.clone(S.f) : V3.clone(S.u);
+    const keep = { p: V3.clone(camera.positionWC), d: V3.clone(camera.directionWC), u: V3.clone(camera.upWC) };
+    const hull = S.prims && S.prims.hull, hullShown = hull && hull.show;
+    if (hull) hull.show = true;     // the cockpit view hides the hull; a wingtip or tail camera still sees it
+    window.encPipPass = true;
+    try {
+      camera.setView({ destination: pos, orientation: { direction: dir, up } });
+      viewer.render();
+      const t = this.on.get(id), c = t.cv, r = c.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.max(1, Math.round(r.width * d)), h = Math.max(1, Math.round(r.height * d));
+      if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+      const src = scene.canvas, sw = src.width, sh = src.height, a = w / h;   // the middle of the render, cut to the window's shape
+      const cw = sw / sh > a ? sh * a : sw, ch = sw / sh > a ? sh : sw / a;
+      c.getContext('2d').drawImage(src, (sw - cw) / 2, (sh - ch) / 2, cw, ch, 0, 0, w, h);
+    } finally {
+      window.encPipPass = false;
+      if (hull) hull.show = hullShown;
+      camera.setView({ destination: keep.p, orientation: { direction: keep.d, up: keep.u } });
+    }
+  },
+};
+for (const b of document.querySelectorAll('#cambar [data-cam]')) b.onclick = () => pip.toggle(b.dataset.cam);
+ship.pip = pip;

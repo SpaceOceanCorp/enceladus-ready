@@ -497,6 +497,33 @@ body.flying.clean #shippad.deck,body.flying.clean #flighthud{bottom:14px}
 #callcard button{background:#262b35;border:1px solid rgba(255,255,255,.22);color:#f2f5f9;border-radius:16px;padding:6px 14px;font:500 13px Inter,sans-serif;cursor:pointer}
 #callcard button.go{background:#e9edf3;color:#0b1220;font-weight:600}
 @media (max-width:640px),(max-height:520px){body.flying #callcard{top:58px}}
+/* ---- inside the rings: the haze of grains too small to draw, thick enough in the B ring to hide all but metres ---- */
+#ringhaze{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .25s}
+/* ---- ship cameras: picture-in-picture views from the belly, the tail and the wingtips ---- */
+#cambar,#pips{display:none}
+body.flying #cambar{display:flex;flex-direction:column;gap:6px;position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:8}
+#cambar button{width:46px;height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0;border-radius:12px;background:rgba(8,12,20,.6);border:1px solid rgba(255,255,255,.2);color:#eef3f9;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#cambar button[aria-pressed=true]{background:rgba(90,170,255,.4);border-color:rgba(160,210,255,.9)}
+#cambar svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#cambar small{font:600 8px Inter,sans-serif;letter-spacing:.06em;opacity:.85}
+body.flying #pips{display:grid;grid-template-columns:repeat(2,auto);gap:6px;position:absolute;right:68px;top:50%;transform:translateY(-50%);z-index:8;pointer-events:none}
+.pip{position:relative;width:256px;height:144px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.28);background:#000;box-shadow:0 6px 20px rgba(0,0,0,.45);pointer-events:auto;cursor:pointer}
+.pip canvas{width:100%;height:100%;display:block}
+.pip b{position:absolute;left:6px;top:4px;font:700 10px Inter,sans-serif;letter-spacing:.08em;color:#fff;text-shadow:0 1px 3px #000}
+@media (min-width:641px) and (min-height:521px){   /* big screens: buttons in a row under the top bar, windows at the top centre over the sky */
+  body.flying #cambar{flex-direction:row;top:112px;right:16px;transform:none}
+  body.flying #pips{top:112px;left:50%;right:auto;transform:translateX(-50%)}.pip{width:220px;height:124px}
+  body.flying.clean #cambar{top:12px;right:170px}body.flying.clean #pips{top:12px}
+}
+@media (max-width:640px),(max-height:520px){
+  body.flying #cambar{right:6px;gap:4px}#cambar button{width:40px;height:40px}
+  body.flying #pips{right:52px}.pip{width:150px;height:86px}
+}
+@media (max-width:640px){body.flying #cambar,body.flying #pips{top:auto;bottom:250px;transform:none}}
+@media (max-height:520px) and (min-width:641px){   /* phone on its side: buttons in a row at the top, windows in a row under them */
+  body.flying #cambar{flex-direction:row;top:8px;right:104px;transform:none}
+  body.flying #pips{grid-template-columns:repeat(4,auto);top:72px;right:104px;transform:none}.pip{width:128px;height:72px}
+}
 /* ---- altimeter strip ---- */
 #flighthud{position:absolute;left:50%;bottom:46px;transform:translateX(-50%);z-index:6;display:flex;background:rgba(8,12,20,.58);border:1px solid rgba(255,255,255,.16);border-radius:16px;color:#eef3f9;font:500 12px Inter,sans-serif;pointer-events:none;overflow:hidden;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 8px 30px rgba(0,0,0,.35)}
 #flighthud.hide{display:none}
@@ -653,7 +680,7 @@ body.flying.clean #shippad.deck,body.flying.clean #flighthud{bottom:14px}
   <dl class="shiponly"><dt>Height</dt><dd id="shipalt"></dd><dt>Speed</dt><dd id="shipspd"></dd><dt>Attitude</dt><dd id="shipatt"></dd><dt>Fuel</dt><dd id="shipfuel"></dd><dt>Status</dt><dd id="shipstat"></dd><dt class="mprow">Online</dt><dd class="mprow mpname" id="shipmp"></dd></dl>
   <div class="row shiponly"><button id="shipView">View: Chase</button><button id="shipAuto">Autopilot</button><button id="shipOut">Get out</button><button id="shipRefuel">Refuel</button><button id="shipExit">Back to orbit</button><button id="shipClean" title="Only the ship and the controls (H)">Hide panels</button></div>
   <div class="fuels shiponly"><label><span>Main engines<i class="sw" id="fuelMainSw"></i></span><select id="fuelMain" aria-label="Main engine fuel"></select></label><label><span>Thrusters<i class="sw" id="fuelThrSw"></i></span><select id="fuelThr" aria-label="Thruster fuel"></select></label><button id="fuelInf" class="inf" aria-pressed="false">Unlimited fuel: off</button><button id="padInvert" class="inf" aria-pressed="false" hidden>Controller pitch: like a plane</button></div>
-  <p class="help keys shiponly">W go · S back · A/D or ←/→ turn · ↑/↓ nose up/down · Q/E roll (fly upside down) · Space up · C down · Shift turbo · F warp · J intrastellar · X brake · P autopilot · V view · H hide panels · drag to look · Esc exit · a game controller or flight stick works too</p>
+  <p class="help keys shiponly">W go · S back · A/D or ←/→ turn · ↑/↓ nose up/down · Q/E roll (fly upside down) · Space up · C down · Shift turbo · F warp · J intrastellar · X brake · P autopilot · V view · 1-4 down, rear, left, right cameras · H hide panels · drag to look · Esc exit · a game controller or flight stick works too</p>
   <p class="help touch shiponly">The stick points the nose · ROLL spins you over · LIFT/DROP · GO, REV, BRAKE · tap TURBO, WARP or INTRASTELLAR to pick a gear for GO (tap again for cruise)</p>
   <dl class="walkonly"><dt>Position</dt><dd id="walkpos"></dd><dt>Ground</dt><dd id="walkelev"></dd><dt>You are</dt><dd id="walkhop"></dd><dt>Sky</dt><dd id="walksat"></dd><dt class="mprow">Online</dt><dd class="mprow mpname" id="walkmp"></dd></dl>
   <div class="body walkonly">
@@ -716,6 +743,14 @@ body.flying.clean #shippad.deck,body.flying.clean #flighthud{bottom:14px}
   <button id="flyFull" aria-label="Show all panels (H)" title="Show all panels (H)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg></button>
 </div>
 <div id="flymsg" aria-live="polite"></div>
+<div id="cambar" aria-label="Ship cameras">
+  <button data-cam="down" aria-pressed="false" title="Belly camera, looking down (1)"><svg viewBox="0 0 24 24"><path d="M12 4v13"/><path d="M6 11l6 6 6-6"/><path d="M4 21h16"/></svg><small>DOWN</small></button>
+  <button data-cam="rear" aria-pressed="false" title="Tail camera, looking back (2)"><svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg><small>REAR</small></button>
+  <button data-cam="left" aria-pressed="false" title="Left wingtip camera (3)"><svg viewBox="0 0 24 24"><path d="M4 12h12"/><path d="M8 8l-4 4 4 4"/><path d="M20 5v14"/></svg><small>LEFT</small></button>
+  <button data-cam="right" aria-pressed="false" title="Right wingtip camera (4)"><svg viewBox="0 0 24 24"><path d="M20 12H8"/><path d="M16 8l4 4-4 4"/><path d="M4 5v14"/></svg><small>RIGHT</small></button>
+</div>
+<div id="pips"></div>
+<div id="ringhaze" aria-hidden="true"></div>
 <div class="card" id="callcard" role="dialog" aria-label="Call sign">
   <label for="callsign">Call sign <span>(optional, others see it on your ship; or just start flying)</span></label>
   <div class="row"><input id="callsign" maxlength="24" autocomplete="nickname" enterkeyhint="go" spellcheck="false"><button class="go" id="callGo">Go</button><button id="callSkip">Skip</button></div>
